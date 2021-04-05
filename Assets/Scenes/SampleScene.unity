@@ -304,12 +304,12 @@ Tilemap:
   m_TileAnchor: {x: 0.3, y: 0, z: 0}
   m_TileOrientation: 6
   m_TileOrientationMatrix:
-    e00: 3
+    e00: 1
     e01: 0
     e02: 0
     e03: 0
     e10: 0
-    e11: 3
+    e11: 1
     e12: 0
     e13: 0
     e20: 0
@@ -5327,12 +5327,12 @@ Tilemap:
   m_TileAnchor: {x: 0.3, y: 0, z: 0}
   m_TileOrientation: 6
   m_TileOrientationMatrix:
-    e00: 3
+    e00: 1
     e01: 0
     e02: 0
     e03: 0
     e10: 0
-    e11: 3
+    e11: 1
     e12: 0
     e13: 0
     e20: 0
@@ -5627,12 +5627,12 @@ Tilemap:
   m_TileAnchor: {x: 0.3, y: 0, z: 0}
   m_TileOrientation: 6
   m_TileOrientationMatrix:
-    e00: 3
+    e00: 1
     e01: 0
     e02: 0
     e03: 0
     e10: 0
-    e11: 3
+    e11: 1
     e12: 0
     e13: 0
     e20: 0
@@ -5716,7 +5716,7 @@ TilemapRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 3
   m_ChunkSize: {x: 32, y: 32, z: 32}
-  m_ChunkCullingBounds: {x: 0, y: 0, z: 0}
+  m_ChunkCullingBounds: {x: 0, y: 0.25, z: 0}
   m_MaxChunkCount: 16
   m_MaxFrameAge: 16
   m_SortOrder: 0
@@ -6483,12 +6483,12 @@ Tilemap:
   m_TileAnchor: {x: 0.3, y: 0, z: 0}
   m_TileOrientation: 6
   m_TileOrientationMatrix:
-    e00: 3
+    e00: 1
     e01: 0
     e02: 0
     e03: 0
     e10: 0
-    e11: 3
+    e11: 1
     e12: 0
     e13: 0
     e20: 0
@@ -6798,12 +6798,12 @@ Tilemap:
   m_TileAnchor: {x: 0.3, y: 0, z: 0}
   m_TileOrientation: 6
   m_TileOrientationMatrix:
-    e00: 3
+    e00: 1
     e01: 0
     e02: 0
     e03: 0
     e10: 0
-    e11: 3
+    e11: 1
     e12: 0
     e13: 0
     e20: 0
