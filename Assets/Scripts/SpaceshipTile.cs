@@ -5,6 +5,6 @@ using UnityEngine.Tilemaps;
 
 public class SpaceshipTile : Tile
 {
-
-    public int health = 95;
+    public int health = 100;
+    
 }
