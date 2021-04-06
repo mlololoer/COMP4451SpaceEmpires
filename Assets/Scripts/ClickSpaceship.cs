@@ -3,15 +3,9 @@ using UnityEngine;
 
 public class ClickSpaceship : MonoBehaviour
 {
-    //public Grid grid;
-    public Tilemap overlayTilemap;
     public Tilemap spaceshipTilemap;
-
-    //display highlight hex
-    public Tile highlightTile;
-    bool highlighted = false;
-    Vector3Int highlightedCoord;
-    Tile tileToMove;
+    //just for initializing a test spaceship
+    public Sprite spaceshipSprite;
 
     Vector3Int getCoordFromMainCameraMouse(Tilemap atThisTilemap) {
         Vector3 mousePos = Input.mousePosition;
@@ -20,52 +14,40 @@ public class ClickSpaceship : MonoBehaviour
         return atThisTilemap.WorldToCell(mouseWorldPos);
     }
 
-    void setHighlightHex(Vector3Int coordToHighlight) {
-        clearHighlightHex();
-        highlighted = true;
-        overlayTilemap.SetTile(coordToHighlight, highlightTile);
-        highlightedCoord = coordToHighlight;
+    
+    void Start() {
+        SpaceshipTile tileInstance = ScriptableObject.CreateInstance<SpaceshipTile>();
+        tileInstance.sprite = spaceshipSprite;
+        spaceshipTilemap.SetTile(new Vector3Int(-8,0,0), tileInstance);
     }
 
-    void clearHighlightHex() {
-        if (highlighted) {
-            highlighted = false;
-            overlayTilemap.SetTile(highlightedCoord, null);
-        }
-    }
+    public void OnMouseOver() {
+        if (Input.GetMouseButtonDown(0)) {
+            Vector3Int clickedCoord = getCoordFromMainCameraMouse(spaceshipTilemap);
+            Debug.Log("Lclick tile: "+clickedCoord);
+            SelectionManager.SM.Select(spaceshipTilemap.GetTile<Tile>(clickedCoord), clickedCoord);
 
 
-
-	public void Update()
-    {
-    	if (Input.GetMouseButtonDown(0)) {
-    		Vector3Int clickedCoord = getCoordFromMainCameraMouse(spaceshipTilemap);
-            Debug.Log(clickedCoord);
-
-            if (spaceshipTilemap.HasTile(clickedCoord)) {
+            /*if (spaceshipTilemap.HasTile(clickedCoord)) {
                 //display the highlight hex around this tile (automatically erase from previously highlighted)
                 setHighlightHex(clickedCoord);
                 tileToMove = spaceshipTilemap.GetTile<Tile>(clickedCoord);
 
                 
-                //SpaceshipTile tileInstance = ScriptableObject.CreateInstance<SpaceshipTile>();
-                //Texture2D tex = Resources.Load<Texture2D>("Textures/fantasyhextiles_v3");
-                //Sprite sprite = Sprite.Create(tex, new Rect(0, 0, 200, 100), new Vector2(0.5f, 0.5f));
-                //tileInstance.sprite = sprite;
-                //spaceshipTilemap.SetTile(clickedCoord, tileInstance);
-	        } else if (highlighted){
+                
+            } else if (highlighted){
                 clearHighlightHex();
                 spaceshipTilemap.SetTile(clickedCoord, tileToMove);
                 spaceshipTilemap.SetTile(highlightedCoord, null);
                 tileToMove = null;
                 //spaceshipTilemap.SwapTile(spaceshipTilemap.GetTile<Tile>(clickedCoord),spaceshipTilemap.GetTile<Tile>(highlightedCoord));
-            }
-    	}
-        if (Input.GetMouseButtonDown(1)) {
-            Vector3Int coordinate = getCoordFromMainCameraMouse(spaceshipTilemap);
-
-            if (spaceshipTilemap.HasTile(coordinate)) {
-                SpaceshipTile temp = spaceshipTilemap.GetTile<SpaceshipTile>(coordinate);
+            }*/
+        }
+        else if (Input.GetMouseButtonDown(1)) {
+            Vector3Int clickedCoord = getCoordFromMainCameraMouse(spaceshipTilemap);
+            Debug.Log("Rclick tile: "+clickedCoord);
+            if (spaceshipTilemap.HasTile(clickedCoord)) {
+                SpaceshipTile temp = spaceshipTilemap.GetTile<SpaceshipTile>(clickedCoord);
                 Debug.Log(temp.health);
                 //spaceshipTilemap.SetTile(coordinate, temp);
             }
