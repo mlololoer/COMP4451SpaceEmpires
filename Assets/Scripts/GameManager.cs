@@ -9,16 +9,9 @@ public class GameManager : MonoBehaviour
 	public ResearchProgress researchProgress;
 	public string empireName = "Nebuchadnezzar";
 	public SpaceshipTile[] empireSpaceships = {};
+	public PlanetTile[] empirePlanets = {};
 	//public PlanetTile[] empirePlanets;
 	public int ownedResources;
-
-
-
-    // Start is called before the first frame update
-    void Start()
-    {
-
-    }
 
     public void ProcessTurn() {
     	//process production in all planets

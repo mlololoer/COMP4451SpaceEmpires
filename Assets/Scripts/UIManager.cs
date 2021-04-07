@@ -12,6 +12,8 @@ public class UIManager : MonoBehaviour
     public void OpenTileModal(Tile tile) {
     	if (tile is SpaceshipTile) {
 
+    	} else if (tile is PlanetTile) {
+    		
     	}
     }
 

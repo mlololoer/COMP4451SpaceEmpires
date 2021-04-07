@@ -13,9 +13,12 @@ public class SelectionManager : MonoBehaviour
 	Tile highlightTile;
 	[SerializeField]
 	Tilemap spaceshipTM;
+	[SerializeField]
+	Tilemap planetTM;
 
 	bool highlighted = false;
 	Vector3Int highlightedCoord;
+	bool highlightedTileIsMovable = false;
 
 	Vector3Int selectedCoord;
 
@@ -23,6 +26,10 @@ public class SelectionManager : MonoBehaviour
 		selectedCoord = coord;
 		if (selectedTile is SpaceshipTile) {
 			Debug.Log("Spaceship: " + ((SpaceshipTile)selectedTile).spaceshipName);
+			highlightedTileIsMovable = true;
+		} else if (selectedTile is PlanetTile) {
+			Debug.Log("Planet: " + ((PlanetTile)selectedTile).planetName);
+			highlightedTileIsMovable = false;
 		}
 		setHighlightHex(coord);
 	}

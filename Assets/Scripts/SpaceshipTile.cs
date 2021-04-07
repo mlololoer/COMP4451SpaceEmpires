@@ -7,5 +7,5 @@ public class SpaceshipTile : Tile
 {
     public int health = 100;
     public string spaceshipName = "Untitled";
-    
+    public Vector3Int nextMoveLocation;
 }
