@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+
 using UnityEngine.Tilemaps;
 
 public class SelectionManager : MonoBehaviour
@@ -13,6 +15,8 @@ public class SelectionManager : MonoBehaviour
 	Tile highlightTile;
 	[SerializeField]
 	Tilemap spaceshipTM;
+	public Text InfoText;
+	public Text UnitText;
 
 	bool highlighted = false;
 	Vector3Int highlightedCoord;
@@ -23,6 +27,8 @@ public class SelectionManager : MonoBehaviour
 		selectedCoord = coord;
 		if (selectedTile is SpaceshipTile) {
 			Debug.Log("Spaceship: " + ((SpaceshipTile)selectedTile).spaceshipName);
+			UnitText.text = ("Spaceship: " + ((SpaceshipTile)selectedTile).spaceshipName);
+			InfoText.text = ("Health: " + ((SpaceshipTile)selectedTile).health);
 		}
 		setHighlightHex(coord);
 	}
