@@ -5,10 +5,10 @@ using UnityEngine.UI;
 
 public class SpaceshipModal : MonoBehaviour
 {
-	public SpaceshipTile tile;
+	//public SpaceshipTile tile;
 	public Text title;
 
     public void updateModal() {
-    	title.text = (tile.spaceshipName);
+    	//title.text = (tile.spaceshipName);
     }
 }

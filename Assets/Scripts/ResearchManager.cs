@@ -19,7 +19,7 @@ public class ResearchManager : MonoBehaviour
 	}
 
 	public void OnTabClicked(ResearchButton button) {
-		switch(button.name) {
+		/*switch(button.name) {
 			case "ResearchButton_1_1": {
 				if (GameManager.GM.researchProgress.ResearchPossible(0)) return;
 				break;
@@ -47,7 +47,7 @@ public class ResearchManager : MonoBehaviour
 		}
 		ClearResearchButtons();
 		Image img = button.GetComponent<Image>();
-		img.color = new Color(0f, 1f, 0f, 1f);
+		img.color = new Color(0f, 1f, 0f, 1f);*/
 
 	}
 
