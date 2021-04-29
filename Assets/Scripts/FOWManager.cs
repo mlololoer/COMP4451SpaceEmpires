@@ -13,11 +13,11 @@ public class FOWManager : MonoBehaviour
 		foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
 			Vector3Int adjacent = CubicHex.DirectionBases[(int)dir] + hexComponent.Hex.GetCoords();
 
-			GameObject.Destroy(hexComponent.ParentEmpire.FOWArray[30+adjacent.x, 15+adjacent.y]);
+			GameObject.Destroy(hexComponent.ParentHexMap.FOWArray[30+adjacent.x, 15+adjacent.y]);
 		}
 		int centerX = hexComponent.Hex.GetCoords().x;
 		int centerY = hexComponent.Hex.GetCoords().y;
-		GameObject.Destroy(hexComponent.ParentEmpire.FOWArray[30+centerX, 15+centerY]);
+		GameObject.Destroy(hexComponent.ParentHexMap.FOWArray[30+centerX, 15+centerY]);
 	}
 
 	public void initializeFOW(CubicHex start) {

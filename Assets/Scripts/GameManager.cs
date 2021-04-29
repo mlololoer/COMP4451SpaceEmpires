@@ -10,12 +10,14 @@ public class GameManager : MonoBehaviour
 	//Player's info
 	public List<Empire> Empires = new List<Empire>();
 
+	public Empire ActiveEmpire;
 	//Hexmap with all units, planets, tiles, etc
 	public HexMap hexMap;
 
 	void Start() {
 		Empires.Add(new Empire("John"));
-		hexMap = GameObject.Find("HexMap").GetComponentInChildren<HexMap>();
+		Empires.Add(new Empire("AIPlayer"));
+		hexMap = GameObject.Find("HexMap").GetComponent<HexMap>();
 		//FOWManager.FM.hexMap = hexMap;
 		//FOWManager.FM.initializeFOW(new CubicHex(0,0));
 	}
@@ -26,7 +28,7 @@ public class GameManager : MonoBehaviour
     	foreach(Empire empire in Empires) {
     		empire.researchProgress.ProcessTurn();
     	}
-    	hexMap.rotateRing(3);
+    	hexMap.rotateRing(3, HexMapLayer.ASTEROID_LAYER);
     	//SelectionManager.SM.ProcessMovement();
     }
 

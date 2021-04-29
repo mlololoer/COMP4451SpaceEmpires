@@ -19,12 +19,4 @@ public class Empire
 		ownedResources = 0;
 	}
 
-	public void AddShip(int x, int y) {
-		empireShips.Add(GameManager.GM.hexMap.initializeShip(x, y));
-	}
-
-	public void RemoveShip(GameObject ship) {
-		empireShips.Remove(ship);
-		GameObject.Destroy(ship);
-	}
 }
