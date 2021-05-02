@@ -15,6 +15,14 @@ public class SingletonEventTransfer : MonoBehaviour
     public void UIManager_BuildAction() {
     	UIManager.UIM.BuildAction();
     }
+    
+    public void UIManager_AttackAction() {
+        UIManager.UIM.AttackAction();
+    }
+
+    public void UIManager_Test() {
+        UIManager.UIM.Test();
+    }
 
     public void GameManager_ProcessTurn() {
     	GameManager.GM.ProcessTurn();

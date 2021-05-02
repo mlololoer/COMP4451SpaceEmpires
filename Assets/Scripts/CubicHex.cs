@@ -35,6 +35,12 @@ public class CubicHex
         this.z = -(x + y);
     }
 
+    public CubicHex(CubicHex copy) {
+        this.x = copy.x;
+        this.y = copy.y;
+        this.z = copy.z;
+    }
+
     public Vector3Int GetCoords() {
         return new Vector3Int(x, y, z);
     }

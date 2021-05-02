@@ -24,6 +24,7 @@ public class SelectionManager : MonoBehaviour
 		//only filter out GOs that are hexes
 		foreach (GameObject clicked in clickedObjects) {
 			if (clicked.GetComponent<CubicHexComponent>() != null && clicked.GetComponent<SortingGroup>() != null) {
+				//Debug.Log(clicked.GetComponent<CubicHexComponent>().Hex);
 				clickedHexLocation = clicked.GetComponent<CubicHexComponent>().Hex;
 				if (clicked.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.PLANET_LAYER
 				|| clicked.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.ASTEROID_LAYER
@@ -58,7 +59,8 @@ public class SelectionManager : MonoBehaviour
 
 		if (SelectedGameObject != null) {
 			Debug.Log(SelectedGameObject.GetComponent<CubicHexComponent>().Hex);
-			UIManager.UIM.UpdateUnitModal(SelectedGameObject.GetComponent<CubicHexComponent>().Info);
+			Debug.Log(SelectedGameObject.GetComponent<CubicHexComponent>().Info);
+			UIManager.UIM.UpdateUnitModal();
 		} else {
 			UIManager.UIM.ClearUnitModal();
 		}
@@ -107,19 +109,25 @@ public class SelectionManager : MonoBehaviour
 	}
 
 	public void MoveOverlayOn() {
+		/*
 		//Get the ship's location by checking where the OVERLAY HEX is
 		GameObject overlayHex = GameManager.GM.hexMap.GetSelectionHex();
 		if (overlayHex == null) {
 			Debug.Log("No overlay hex");
 			return;
 		}
-		GameObject ship = GameManager.GM.hexMap.GetHex(overlayHex.GetComponent<CubicHexComponent>().Hex, HexMapLayer.SHIP_LAYER);
-		if (ship != null)
+		GameObject ship = GameManager.GM.hexMap.GetHex(overlayHex.GetComponent<CubicHexComponent>().Hex, HexMapLayer.SHIP_LAYER);*/
+		if (SelectedGameObject != null && SelectedGameObject.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.SHIP_LAYER)
 		{
-			CubicHexComponent shipCHC = ship.GetComponent<CubicHexComponent>();
-			Debug.Log("Ship at "+ shipCHC.Hex.x + ", " + shipCHC.Hex.y+" ready to move");
+			CubicHexComponent shipCHC = SelectedGameObject.GetComponent<CubicHexComponent>();
+			if (((ShipInfo)shipCHC.Info).ParentEmpire == GameManager.GM.GetActiveEmpire()) {
+				Debug.Log("Ship at "+ shipCHC.Hex.x + ", " + shipCHC.Hex.y+" ready to move");
 			List<CubicHex> reachable = GameManager.GM.hexMap.GetHexesFromDist(shipCHC.Hex, ((ShipInfo)shipCHC.Info).remainingMoves);
 			GameManager.GM.hexMap.SetHighlightHexes(reachable);
+			} else {
+				Debug.Log("Ship was not owned by active empire");
+			}
+			
 		} else {
 			Debug.Log("Ship was null");
 		}
@@ -137,18 +145,38 @@ public class SelectionManager : MonoBehaviour
 				clickedHexLocation = clicked.GetComponent<CubicHexComponent>().Hex;
 			}
 		}
-		Debug.Log(clickedHexLocation);
-		//Check for whether the cursor was let go on a highlight hex (i.e. a reachable hex)
-		if (GameManager.GM.hexMap.HexIsInHighlightHexes(clickedHexLocation)) {
-			Debug.Log("Move from "+SelectedGameObject.GetComponent<CubicHexComponent>().Hex+" to "+clickedHexLocation);
-			GameManager.GM.hexMap.MoveHex(SelectedGameObject.GetComponent<CubicHexComponent>().Hex, clickedHexLocation, HexMapLayer.SHIP_LAYER);
+		if (SelectedGameObject != null && SelectedGameObject.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.SHIP_LAYER) {
+			//Check for whether the cursor was let go on a highlight hex (i.e. a reachable hex)
+			CubicHexComponent shipCHC = SelectedGameObject.GetComponent<CubicHexComponent>();
+			if (((ShipInfo)shipCHC.Info).ParentEmpire == GameManager.GM.GetActiveEmpire()) {
+				if (GameManager.GM.hexMap.HexIsInHighlightHexes(clickedHexLocation)) {
+					Debug.Log("Move a " + SelectedGameObject);
+					Debug.Log("Move from "+shipCHC.Hex+" to "+clickedHexLocation);
+					GameManager.GM.hexMap.MoveShip(SelectedGameObject, clickedHexLocation);
+					((ShipInfo)shipCHC.Info).remainingMoves -= GameManager.GM.hexMap.GetDistToHex(clickedHexLocation);
+
+				} else {
+					Debug.Log("RMb lifted on a non-highlight hex");
+				}
+			} else {
+				Debug.Log("Could not move ship owned by another empire");
+			}
+			
 		} else {
-			Debug.Log("RMb lifted on a non-highlight hex");
+			Debug.Log("Selected object is not a ship");
 		}
+		
 		//Maybe get the shortest path by going backwards from the target hex using the distances array inside the GetHexesFromDist
-		GameManager.GM.hexMap.ClearHighlightHexes();
+		ClearAllSelections();
+
+	}
+	public void ClearAllSelections() {
 		prevSelectedHex = null;
 		SelectedGameObject = null;
+		selectIndex = 0;
+		GameManager.GM.hexMap.ClearSelectionHex();
+		GameManager.GM.hexMap.ClearHighlightHexes();
+		UIManager.UIM.ClearUnitModal();
 	}
 
 	// public void Move(List<GameObject> clickedObjects) {

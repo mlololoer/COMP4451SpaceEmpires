@@ -4,7 +4,12 @@ public class ResearchProgress {
 	/*	Research Hierarchy (for now)
 		Spaceship Heat Shield 1 -> Spaceship Heat Shield 2 -> Spaceship Heat Shield 3	(higher heat shield: reach closer to central star)
 		Spaceship Durability 1 -> Spaceship Durability 2 -> Spaceship Durability 3	(higher durability: unlock spaceships with more health and weapons)
-		
+
+		Ship heat shields (just two)
+		Ship types (frigate only initially, destroyer -> cruiser)
+		Ship Health Boost (1)
+		Ship Damage Boost (1)
+		Ship Limits (4 initially, 5->6.)
 	*/	
 	readonly int[] turnsToCompleteResearch = new int[3] {3,5,7};
 	int[] completedResearch =  new int[6];

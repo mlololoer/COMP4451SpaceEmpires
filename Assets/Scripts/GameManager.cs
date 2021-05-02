@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
 		Empires.Add(new Empire("John"));
 		Empires.Add(new Empire("AIPlayer"));
 		hexMap = GameObject.Find("HexMap").GetComponent<HexMap>();
+		hexMap.GenerateMap(0.05f, 0.2f, Empires);
 		//FOWManager.FM.hexMap = hexMap;
 		//FOWManager.FM.initializeFOW(new CubicHex(0,0));
 	}
@@ -34,14 +35,17 @@ public class GameManager : MonoBehaviour
 			conduct research
 	*/
     public void ProcessTurn() {
+    	//BEFORE a player starts their turn, process all research/building stuff.
+    	empireIndex = (empireIndex+1)%Empires.Count;
+    	GetActiveEmpire().NewTurn();
     	//process spaceship actions in all spaceships
     	//calculate research researchProgress
-    	foreach(Empire empire in Empires) {
-    		empire.researchProgress.ProcessTurn();
-    	}
-    	hexMap.rotateRing(3, HexMapLayer.ASTEROID_LAYER);
-    	//SelectionManager.SM.ProcessMovement();
-    	empireIndex++;
+    	//foreach(Empire empire in Empires) {
+    	//	empire.researchProgress.ProcessTurn();
+    	//}
+    	hexMap.rotateRing(2, HexMapLayer.ASTEROID_LAYER);
+    	SelectionManager.SM.ClearAllSelections();
+    	
     }
 
     public Empire GetActiveEmpire() {
