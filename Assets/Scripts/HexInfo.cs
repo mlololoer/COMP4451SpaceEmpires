@@ -1,3 +1,4 @@
+using UnityEngine;
 using System.Collections.Generic;
 //Contains game-specific information on a certain hex
 public class HexInfo
@@ -14,18 +15,20 @@ public class HexInfo
 
 public class ShipInfo : HexInfo {
 	Queue<CubicHex> queuedPath;
-	int upgradeLevel;
-	public ShipInfo(string name, Empire parentEmpire, int upgradeLevel) : base(name, parentEmpire){
+	int tier;
+	public int remainingMoves {get;} = 2;
+	public ShipInfo(string name, Empire parentEmpire, int tier) : base(name, parentEmpire){
 		this.health = 100;
-		this.upgradeLevel = upgradeLevel;
+		this.tier = tier;
 	}
+
 }
 
 public class PlanetInfo : HexInfo {
-
 	public PlanetInfo(string name, Empire parentEmpire) : base(name, parentEmpire){
 		this.health = 200;
 	}
+
 }
 
 public class ResourceInfo : HexInfo {

@@ -9,19 +9,10 @@ public class SelectionManager : MonoBehaviour
 {
 	public static SelectionManager SM;
 
-	[SerializeField]
-	HexMap hexMap;
-
-	Queue<(Vector3Int, Vector3Int)> movementQueue = new Queue<(Vector3Int, Vector3Int)>();
-
-	[SerializeField]
-	Text UnitModalNameText;
-	[SerializeField]
-	Text UnitModalDetailsText;
-
-	GameObject overlayHex = null;
 	//to keep track of whether the same hex is clicked again (to loop through all the objects in the hex)
 	CubicHex prevSelectedHex = null;
+
+	public GameObject SelectedGameObject = null;
 
 	int selectIndex = 0;
 
@@ -34,68 +25,76 @@ public class SelectionManager : MonoBehaviour
 		foreach (GameObject clicked in clickedObjects) {
 			if (clicked.GetComponent<CubicHexComponent>() != null && clicked.GetComponent<SortingGroup>() != null) {
 				clickedHexLocation = clicked.GetComponent<CubicHexComponent>().Hex;
-				if (clicked.GetComponent<SortingGroup>().sortingOrder != (int)HexMapLayer.OVERLAY_LAYER && clicked.GetComponent<SortingGroup>().sortingOrder != (int)HexMapLayer.BACKGROUND_LAYER) {
+				if (clicked.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.PLANET_LAYER
+				|| clicked.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.ASTEROID_LAYER
+				|| clicked.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.RESOURCE_LAYER
+				|| clicked.GetComponent<SortingGroup>().sortingOrder == (int)HexMapLayer.SHIP_LAYER) {
 					hexObjs.Add(clicked);
 					onlyBackgroundTiles = false;
 				}
-				
 			}
 		}
 
-		
+
+
 		//clicked a location with only background tiles: deselect
 		if (onlyBackgroundTiles){
 			//move the overlay hex
-			if (overlayHex != null) {
-				GameObject.Destroy(overlayHex);
-			}
-			overlayHex = null;
+			GameManager.GM.hexMap.ClearSelectionHex();
+			SelectedGameObject = null;
 			selectIndex = 0;
 		}
-		else if (prevSelectedHex == null) {
-			overlayHex = GameManager.GM.hexMap.InitializeOverlayHex(clickedHexLocation);
-			selectIndex = 0;
-		}
-		//clicked the same location again: increment selection index
-		else if (clickedHexLocation.GetCoords() == prevSelectedHex.GetCoords()) {
+		else if (prevSelectedHex != null && clickedHexLocation.GetCoords() == prevSelectedHex.GetCoords()) {
 			//already selected here, don't change the overlay hex
-
 			selectIndex = (selectIndex + 1) % hexObjs.Count;
+			SelectedGameObject = hexObjs[selectIndex];
 		} else {
-			if (overlayHex != null) {
-				GameObject.Destroy(overlayHex);
-			}
-			overlayHex = GameManager.GM.hexMap.InitializeOverlayHex(clickedHexLocation);
+			GameManager.GM.hexMap.SetSelectionHex(clickedHexLocation);
 			selectIndex = 0;
+			SelectedGameObject = hexObjs[selectIndex];
 		}
+
+		prevSelectedHex = clickedHexLocation;
+
+		if (SelectedGameObject != null) {
+			Debug.Log(SelectedGameObject.GetComponent<CubicHexComponent>().Hex);
+			UIManager.UIM.UpdateUnitModal(SelectedGameObject.GetComponent<CubicHexComponent>().Info);
+		} else {
+			UIManager.UIM.ClearUnitModal();
+		}
+
+
+
+/*
 		if (hexObjs.Count > 0) {
 			//do something with the current selection
 			CubicHexComponent hexComponent = hexObjs[selectIndex].GetComponent<CubicHexComponent>();
 			switch((HexMapLayer)hexObjs[selectIndex].GetComponent<SortingGroup>().sortingOrder) {
 				case (HexMapLayer.SHIP_LAYER): {
-					Debug.Log("Ship: " + hexComponent.Info.name);
+					Debug.Log("Selected Ship: " + hexComponent.Info.name);
 					//UIManager.UIM.UpdateUnitModal(spaceshipName,spaceshipHealth);
 					break;
 				}
 				case (HexMapLayer.PLANET_LAYER): {
-					Debug.Log("Planet: " + hexComponent.Info.name);
+					Debug.Log("Selected Planet: " + hexComponent.Info.name);
 					//UIManager.UIM.UpdateUnitModal(planetName,planetHealth);
 					break;
 				}
 				case (HexMapLayer.RESOURCE_LAYER): {
-					Debug.Log("Resource: " + hexComponent.Info.name);
+					Debug.Log("Selected Resource: " + hexComponent.Info.name);
 					//UIManager.UIM.UpdateUnitModal(planetName,planetHealth);
 					break;
 				}
 				case (HexMapLayer.ASTEROID_LAYER): {
-					Debug.Log("Asteroid");
+					Debug.Log("Selected Asteroid");
 					//UIManager.UIM.UpdateUnitModal(planetName,planetHealth);
 					break;
 				}
 			}
 		}
+		*/
 	
-		prevSelectedHex = clickedHexLocation;
+		
 		//we should use RMB to handle MOVING. Only LMB for selecting.
 		/*else if (!spaceshipTM.HasTile(coord)){
 			Debug.Log("Terrain");
@@ -107,58 +106,68 @@ public class SelectionManager : MonoBehaviour
 		}*/
 	}
 
-	public void CreateMoveOverlay() {
+	public void MoveOverlayOn() {
 		//Get the ship's location by checking where the OVERLAY HEX is
-		if (overlayHex == null) return;
+		GameObject overlayHex = GameManager.GM.hexMap.GetSelectionHex();
+		if (overlayHex == null) {
+			Debug.Log("No overlay hex");
+			return;
+		}
 		GameObject ship = GameManager.GM.hexMap.GetHex(overlayHex.GetComponent<CubicHexComponent>().Hex, HexMapLayer.SHIP_LAYER);
 		if (ship != null)
 		{
 			CubicHexComponent shipCHC = ship.GetComponent<CubicHexComponent>();
 			Debug.Log("Ship at "+ shipCHC.Hex.x + ", " + shipCHC.Hex.y+" ready to move");
+			List<CubicHex> reachable = GameManager.GM.hexMap.GetHexesFromDist(shipCHC.Hex, ((ShipInfo)shipCHC.Info).remainingMoves);
+			GameManager.GM.hexMap.SetHighlightHexes(reachable);
+		} else {
+			Debug.Log("Ship was null");
 		}
-		
 	}
 
-	public void Move(List<GameObject> clickedObjects) {
+	public void MoveOverlayOff(List<GameObject> clickedObjects) {
 		CubicHex clickedHexLocation = null;
-		List<GameObject> hexObjs = new List<GameObject>();
-		if (clickedObjects.Count == 0) return;
-		bool onlyBackgroundTiles = true;
-		//CANNOT move here if the path is blocked!
+		if (clickedObjects.Count == 0) {
+			Debug.Log("Nothing at the hex where RMB was lifted (outside map)");
+			return;
+		}
+		//only filter out GOs that are hexes
 		foreach (GameObject clicked in clickedObjects) {
 			if (clicked.GetComponent<CubicHexComponent>() != null && clicked.GetComponent<SortingGroup>() != null) {
 				clickedHexLocation = clicked.GetComponent<CubicHexComponent>().Hex;
-				if (clicked.GetComponent<SortingGroup>().sortingOrder != (int)HexMapLayer.OVERLAY_LAYER && clicked.GetComponent<SortingGroup>().sortingOrder != (int)HexMapLayer.BACKGROUND_LAYER) {
-					hexObjs.Add(clicked);
-					onlyBackgroundTiles = false;
-				}
 			}
 		}
+		Debug.Log(clickedHexLocation);
+		//Check for whether the cursor was let go on a highlight hex (i.e. a reachable hex)
+		if (GameManager.GM.hexMap.HexIsInHighlightHexes(clickedHexLocation)) {
+			Debug.Log("Move from "+SelectedGameObject.GetComponent<CubicHexComponent>().Hex+" to "+clickedHexLocation);
+			GameManager.GM.hexMap.MoveHex(SelectedGameObject.GetComponent<CubicHexComponent>().Hex, clickedHexLocation, HexMapLayer.SHIP_LAYER);
+		} else {
+			Debug.Log("RMb lifted on a non-highlight hex");
+		}
+		//Maybe get the shortest path by going backwards from the target hex using the distances array inside the GetHexesFromDist
+		GameManager.GM.hexMap.ClearHighlightHexes();
+		prevSelectedHex = null;
+		SelectedGameObject = null;
 	}
 
-	public void ProcessMovement() {
-		/*while (movementQueue.Count > 0) {
-			(Vector3Int, Vector3Int) movement = movementQueue.Dequeue();
-			//temporarily only for spaceships
-			spaceshipTM.SetTile(movement.Item2, spaceshipTM.GetTile(movement.Item1));
-			spaceshipTM.SetTile(movement.Item1,null);
-			FOWManager.FM.ClearFOW(movement.Item2);
-		}
-		spaceshipTM.SetTile(new Vector3Int(-7-temporaryEnemyTurn,2,0), spaceshipTM.GetTile(new Vector3Int(-6-temporaryEnemyTurn,2,0)));
-		spaceshipTM.SetTile(new Vector3Int(-6-temporaryEnemyTurn,2,0), null);*/
-		/*if (temporaryEnemyTurn%2 == 0) {
-			planetTM.SetTile(new Vector3Int(-7+(temporaryEnemyTurn/2),(temporaryEnemyTurn/2)-1,0), planetTM.GetTile(new Vector3Int(-8+(temporaryEnemyTurn/2),temporaryEnemyTurn/2,0)));
-			planetTM.SetTile(new Vector3Int(-8+(temporaryEnemyTurn/2),temporaryEnemyTurn/2,0), null);
-		}*/
-		
-		/*
-		if (temporaryEnemyTurn == 4) {
-			UIManager.UIM.OpenFightModal();
-		}
-		//after processing, we clear all highlight activity
-		clearHighlightHex();
-		temporaryEnemyTurn += 1;*/
-	}
+	// public void Move(List<GameObject> clickedObjects) {
+	// 	CubicHex clickedHexLocation = null;
+	// 	List<GameObject> hexObjs = new List<GameObject>();
+	// 	if (clickedObjects.Count == 0) return;
+	// 	bool onlyBackgroundTiles = true;
+	// 	//CANNOT move here if the path is blocked!
+	// 	foreach (GameObject clicked in clickedObjects) {
+	// 		if (clicked.GetComponent<CubicHexComponent>() != null && clicked.GetComponent<SortingGroup>() != null) {
+	// 			clickedHexLocation = clicked.GetComponent<CubicHexComponent>().Hex;
+	// 			if (clicked.GetComponent<SortingGroup>().sortingOrder != (int)HexMapLayer.OVERLAY_LAYER && clicked.GetComponent<SortingGroup>().sortingOrder != (int)HexMapLayer.BACKGROUND_LAYER) {
+	// 				hexObjs.Add(clicked);
+	// 				onlyBackgroundTiles = false;
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 
     //Singleton implementation
 	void Awake() {

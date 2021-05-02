@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using UnityEngine.UI;
+
 //Handles turns for every player
 public class GameManager : MonoBehaviour
 {
@@ -10,7 +12,7 @@ public class GameManager : MonoBehaviour
 	//Player's info
 	public List<Empire> Empires = new List<Empire>();
 
-	public Empire ActiveEmpire;
+	int empireIndex;
 	//Hexmap with all units, planets, tiles, etc
 	public HexMap hexMap;
 
@@ -22,15 +24,30 @@ public class GameManager : MonoBehaviour
 		//FOWManager.FM.initializeFOW(new CubicHex(0,0));
 	}
 
+	
+
+	
+	/*	On a player's turn, they are free to:
+			select and move/modify ships
+				when a ship is moved, if it moves past an enemy ship too close, a fight scene can be triggered
+			select and modify planets
+			conduct research
+	*/
     public void ProcessTurn() {
     	//process spaceship actions in all spaceships
-    	//calculate research progress
+    	//calculate research researchProgress
     	foreach(Empire empire in Empires) {
     		empire.researchProgress.ProcessTurn();
     	}
     	hexMap.rotateRing(3, HexMapLayer.ASTEROID_LAYER);
     	//SelectionManager.SM.ProcessMovement();
+    	empireIndex++;
     }
+
+    public Empire GetActiveEmpire() {
+		return Empires[empireIndex];
+	}
+
 
     //Singleton function
     void Awake() {

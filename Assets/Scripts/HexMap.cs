@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 using System;
-public enum HexMapLayer {BACKGROUND_LAYER,PLANET_LAYER,ASTEROID_LAYER,RESOURCE_LAYER,SHIP_LAYER,OVERLAY_LAYER};
+using System.Linq;
+public enum HexMapLayer {BACKGROUND_LAYER,PLANET_LAYER,ASTEROID_LAYER,RESOURCE_LAYER,SHIP_LAYER,HIGHLIGHT_LAYER,OVERLAY_LAYER};
 
 //Manages the map where all hexes are contained in.
 public class HexMap : MonoBehaviour
@@ -31,7 +32,7 @@ public class HexMap : MonoBehaviour
     public Sprite SHIP_SPRITE;
 
     public Sprite SELECTION_FOCUS_SPRITE;
-    public Sprite SELECTION_MOVEMENT_SPRITE;
+    public Sprite SELECTION_HIGHLIGHT_SPRITE;
 
     //Stores all background hexes generated, by coordinates
     GameObject[,] HexArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
@@ -43,23 +44,29 @@ public class HexMap : MonoBehaviour
     GameObject[,] ShipArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
     //Stores all planets by coordinates
     GameObject[,] PlanetArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
+
+    GameObject[,] HighlightArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
     //Stores FOW tiles.
     //INDEPENDENT OF EACH PLAYER!!!
     //INDEPENDENT OF EACH PLAYER!!!
     //INDEPENDENT OF EACH PLAYER!!!
     public GameObject[,] FOWArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
 
+    //For UI
+    GameObject[,] HighlightOverlayArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
+
+    GameObject SelectionOverlayHex = null;
+
     void Start() {
         GenerateMap(0.05f, 0.2f);
-        InitializeShip(new CubicHex(2, 2));
-        InitializeShip(new CubicHex(0, -7));
+        GetHexesFromDist(new CubicHex(2,2), 2);
     }
 
     //default hex dimensions: 	radius of 0.5 Unity in-world units 
     public void GenerateMap(float resourceDensity, float asteroidDensity) {
     	
-    	//the very CENTER hex is always the SUN.
-    	InitializeHex(new CubicHex(0,0), HexMapLayer.BACKGROUND_LAYER, SUN_SPRITE);
+    	//the very CENTER hex is always the SUN (an asteroid, since ships cannot collide with it)
+    	InitializeHex(new CubicHex(0,0), HexMapLayer.ASTEROID_LAYER, SUN_SPRITE);
 
     	//hex ring with radius ringRadius
     	for (int ringRadius = 1; ringRadius <= MAP_RADIUS; ++ringRadius) {
@@ -133,6 +140,7 @@ public class HexMap : MonoBehaviour
     public void rotateRing(int ringNum, HexMapLayer layer) {
 		//temporarily store the very last hex to be swapped
         CubicHex finalHexCoords = new CubicHex(CubicHex.DirectionBases[(int)CubicDirection.NORTH]*ringNum);
+        //Debug.Log(GetHex(finalHexCoords, HexMapLayer.ASTEROID_LAYER));
         finalHexCoords = finalHexCoords.Adjacent(CubicDirection.SOUTHWEST);
 
 		GameObject replacementHex = GetHex(finalHexCoords, layer);
@@ -142,7 +150,7 @@ public class HexMap : MonoBehaviour
 			CubicHex baseDir = new CubicHex(CubicHex.DirectionBases[(int)dir]*ringNum);
 			for (int stepLen = 0; stepLen < ringNum; ++stepLen) {
 
-                temporaryHex = MoveHex(baseDir, layer, replacementHex);
+                temporaryHex = ReplaceHex(baseDir, layer, replacementHex);
                 replacementHex = temporaryHex;
 
                 //step towards next hex (wrap around NORTHWEST->NORTH)
@@ -160,23 +168,34 @@ public class HexMap : MonoBehaviour
 		newHexTile.GetComponent<CubicHexComponent>().ParentHexMap = this;
 		newHexTile.GetComponentInChildren<SortingGroup>().sortingOrder = (int)layer;
 		newHexTile.GetComponentInChildren<SpriteRenderer>().sprite = sprite;
-
-		SetHex(pos, layer, newHexTile);
+        if (layer == HexMapLayer.HIGHLIGHT_LAYER) {
+            HighlightList.Add(newHexTile);
+        } else {
+            SetHex(pos, layer, newHexTile);
+        }
 
         return newHexTile;
     }
 
-    public GameObject InitializeShip(CubicHex pos) {
+    public GameObject PlaceShipAtPlanet(GameObject planet, ShipInfo info) {
+        if (planet == null || info == null || planet.GetComponent<CubicHexComponent>() == null || planet.GetComponent<SortingGroup>() == null) {
+            Debug.Log("Spawn ship at invalid planet");
+            return null;
+        }
+        return InitializeShip(planet.GetComponent<CubicHexComponent>().Hex, info);
+    }
+
+    public GameObject InitializeShip(CubicHex pos, ShipInfo info) {
         if (GetHex(pos, HexMapLayer.SHIP_LAYER) != null) {
             Debug.Log("Ship might already exist at this location: " + pos.x + ", " + pos.y);
         }
 		GameObject newHexTile = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
-		newHexTile.name = ("Ship: " + pos.x + ", " + pos.y);
+		newHexTile.name = ("Ship");
 		newHexTile.GetComponent<CubicHexComponent>().Hex = pos;
 		newHexTile.GetComponent<CubicHexComponent>().ParentHexMap = this;
 		newHexTile.GetComponentInChildren<SortingGroup>().sortingOrder = (int)HexMapLayer.SHIP_LAYER;
 		newHexTile.GetComponentInChildren<SpriteRenderer>().sprite = SHIP_SPRITE;
-        newHexTile.GetComponent<CubicHexComponent>().Info = new ShipInfo("Hi", GameManager.GM.ActiveEmpire, 0);
+        newHexTile.GetComponent<CubicHexComponent>().Info = info;
 
 		SetHex(pos, HexMapLayer.SHIP_LAYER, newHexTile);
         
@@ -188,7 +207,7 @@ public class HexMap : MonoBehaviour
             Debug.Log("Asteroid might already exist at this location: " + pos.x + ", " + pos.y);
         }
         GameObject newHexTile = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
-        newHexTile.name = ("Asteroid: " + pos.x + ", " + pos.y);
+        newHexTile.name = ("Asteroid");
         newHexTile.GetComponent<CubicHexComponent>().Hex = pos;
         newHexTile.GetComponent<CubicHexComponent>().ParentHexMap = this;
         newHexTile.GetComponentInChildren<SortingGroup>().sortingOrder = (int)HexMapLayer.ASTEROID_LAYER;
@@ -204,7 +223,7 @@ public class HexMap : MonoBehaviour
             Debug.Log("Resource might already exist at this location: " + pos.x + ", " + pos.y);
         }
         GameObject newHexTile = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
-        newHexTile.name = ("Resource: " + pos.x + ", " + pos.y);
+        newHexTile.name = ("Resource");
         newHexTile.GetComponent<CubicHexComponent>().Hex = pos;
         newHexTile.GetComponent<CubicHexComponent>().ParentHexMap = this;
         newHexTile.GetComponentInChildren<SortingGroup>().sortingOrder = (int)HexMapLayer.RESOURCE_LAYER;
@@ -221,38 +240,66 @@ public class HexMap : MonoBehaviour
             Debug.Log("Planet might already exist at this location: " + pos.x + ", " + pos.y);
         }
         GameObject newHexTile = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
-        newHexTile.name = ("Planet: " + pos.x + ", " + pos.y);
+        newHexTile.name = ("Planet");
         newHexTile.GetComponent<CubicHexComponent>().Hex = pos;
         newHexTile.GetComponent<CubicHexComponent>().ParentHexMap = this;
         newHexTile.GetComponentInChildren<SortingGroup>().sortingOrder = (int)HexMapLayer.PLANET_LAYER;
         newHexTile.GetComponentInChildren<SpriteRenderer>().sprite = PLANET_SPRITE;
-        newHexTile.GetComponent<CubicHexComponent>().Info = new PlanetInfo("Narnia", GameManager.GM.ActiveEmpire);
+        newHexTile.GetComponent<CubicHexComponent>().Info = new PlanetInfo("New Planet", GameManager.GM.GetActiveEmpire());
 
         SetHex(pos, HexMapLayer.PLANET_LAYER, newHexTile);
         
         return newHexTile;
     }
 
-    public GameObject InitializeOverlayHex(CubicHex pos) {
-        GameObject newHexTile = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
-        newHexTile.name = ("Overlay hex: " + pos.x + ", " + pos.y);
-        newHexTile.GetComponent<CubicHexComponent>().Hex = pos;
-        newHexTile.GetComponent<CubicHexComponent>().ParentHexMap = this;
-        newHexTile.GetComponentInChildren<SortingGroup>().sortingOrder = (int)HexMapLayer.OVERLAY_LAYER;
-        newHexTile.GetComponentInChildren<SpriteRenderer>().sprite = SELECTION_FOCUS_SPRITE;
+    public void SetSelectionHex(CubicHex pos) {
+        if (SelectionOverlayHex != null)
+        {
+            ClearSelectionHex();
+        }
+        SelectionOverlayHex = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
+        SelectionOverlayHex.name = ("Overlay hex: " + pos.x + ", " + pos.y);
+        SelectionOverlayHex.GetComponent<CubicHexComponent>().Hex = pos;
+        SelectionOverlayHex.GetComponent<CubicHexComponent>().ParentHexMap = this;
+        SelectionOverlayHex.GetComponentInChildren<SortingGroup>().sortingOrder = (int)HexMapLayer.OVERLAY_LAYER;
+        SelectionOverlayHex.GetComponentInChildren<SpriteRenderer>().sprite = SELECTION_FOCUS_SPRITE;
 
-        return newHexTile;
     }
 
-    public GameObject MoveHex(CubicHex replacementPos, HexMapLayer layer, GameObject replacementHex) {
+    public void ClearSelectionHex() {
+        if (SelectionOverlayHex != null) {
+            GameObject.Destroy(SelectionOverlayHex);
+            SelectionOverlayHex = null;
+        }
+    }
+
+    public GameObject GetSelectionHex() {
+        return SelectionOverlayHex;
+    }
+
+    public GameObject ReplaceHex(CubicHex replacementPos, HexMapLayer layer, GameObject replacementHex) {
         GameObject replacedHex = GetHex(replacementPos, layer);
-        if (replacementHex != null) {
+        /*if (replacementHex != null) {
             replacementHex.GetComponent<CubicHexComponent>().Hex.SetCoords(replacementPos.x, replacementPos.y);
             replacementHex.transform.position = replacementPos.WorldPosition();
-        }
+        }*/
         SetHex(replacementPos, layer, replacementHex);
         return replacedHex;
     }    
+
+    public bool MoveHex(CubicHex from, CubicHex to, HexMapLayer layer) {
+        if (GetHex(from, layer) == null || GetHex(to, layer) != null) {
+            Debug.Log("Could not move hex");
+            return false;
+        }
+        Debug.Log("From "+from + ", to "+to);
+        Debug.Log("Removing " + GetHex(from,layer));
+        SetHex(to, layer, GetHex(from, layer));
+        Debug.Log("MOVED HEX1:"+GetHex(to,layer));
+        SetHex(from, layer, null);
+        Debug.Log("MOVED HEX2:"+GetHex(to,layer));
+        return true;
+    }
 
     GameObject[,] GetHexArray(HexMapLayer layer) {
         switch(layer) {
@@ -261,17 +308,111 @@ public class HexMap : MonoBehaviour
             case HexMapLayer.ASTEROID_LAYER:{return AsteroidArray;}
             case HexMapLayer.RESOURCE_LAYER:{return ResourceArray;}
             case HexMapLayer.SHIP_LAYER:{return ShipArray;}
-            default: {return null;}
+            case HexMapLayer.HIGHLIGHT_LAYER:{return HighlightArray;}
+            default: {Debug.Log("Invalid layer!"); return null;}
         }
     }
 
     public GameObject GetHex(CubicHex pos, HexMapLayer layer) {
+        Debug.Log("List");
+        for (int i = 0; i < MAX_MAP_WIDTH; ++i) {
+            string line = "";
+            for (int j = 0; j < MAX_MAP_HEIGHT; ++j) {
+                if (ShipArray[i,j] == null) {
+                    line += "N ";
+                } else {
+                    line += ShipArray[i,j].name + " ";
+                }
+                
+            }
+            Debug.Log(line);
+        }
         return GetHexArray(layer)[MAP_X_OFFSET + pos.x, MAP_Y_OFFSET + pos.y];
     }
 
-    public void SetHex(CubicHex pos, HexMapLayer layer, GameObject hex) {
+    void SetHex(CubicHex pos, HexMapLayer layer, GameObject hex) {
+        
         GetHexArray(layer)[MAP_X_OFFSET + pos.x, MAP_Y_OFFSET + pos.y] = hex;
+        if (hex != null) {
+            hex.GetComponent<CubicHexComponent>().Hex.SetCoords(pos.x, pos.y);
+            hex.transform.position = pos.WorldPosition();
+        } else {
+            Debug.Log("SetHex with null");
+        }
+    }
+    //for finding moveable tiles from a ship. since ships will probably not move more than 4 tiles in a turn, we simple use BFS.
+    public List<CubicHex> GetHexesFromDist(CubicHex pos, int maxDist) {
+        if (maxDist > MAX_MAP_WIDTH/2 || maxDist > MAX_MAP_HEIGHT/2) {
+            Debug.Log("Reached a hex outside of the map!");
+            return null;
+        }
+        HashSet<CubicHex> reachable = new HashSet<CubicHex>();
+        //initially we don't know the distances of each hex, so we set them to infinity
+        int[,] distances = new int[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
+        for (int i = 0; i < MAX_MAP_WIDTH; ++i){
+            for (int j = 0; j < MAX_MAP_HEIGHT; ++j){
+                distances[i,j] = Int32.MaxValue;
+            }
+        }
+        //center hex has distance of 0
+        distances[MAP_X_OFFSET + pos.x, MAP_Y_OFFSET + pos.y] = 0;
+
+        Queue<CubicHex> queue = new Queue<CubicHex>();
+
+        queue.Enqueue(pos);
+        while (queue.Count > 0) {
+            CubicHex hex = queue.Dequeue();
+            if (hex != pos) {
+                reachable.Add(hex);
+            }
+            int hexDist = distances[MAP_X_OFFSET + hex.x, MAP_Y_OFFSET + hex.y];
+            foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection)))
+            {
+                CubicHex adj = hex.Adjacent(dir);
+                if (GetHex(adj, HexMapLayer.SHIP_LAYER) != null || GetHex(adj, HexMapLayer.ASTEROID_LAYER) != null) {
+                    continue;
+                }
+                int adjDist = distances[MAP_X_OFFSET + adj.x, MAP_Y_OFFSET + adj.y];
+                if (hexDist + 1 < adjDist && hexDist + 1 <= maxDist) {
+                    queue.Enqueue(adj);
+                    distances[MAP_X_OFFSET + adj.x, MAP_Y_OFFSET + adj.y] = hexDist + 1;
+                }
+            }
+        }
+        return reachable.ToList();
     }
 
-    
+    List<GameObject> HighlightList;
+    //No need to keep all the highlight hexes in a separate 2D array because we never need to refer to their locations. Just need to 
+    public void SetHighlightHexes(List<CubicHex> hexes)
+    {
+        if (HighlightList != null) {
+            ClearHighlightHexes();
+        }
+        HighlightList = new List<GameObject>();
+        foreach (CubicHex hex in hexes)
+        {
+            InitializeHex(hex, HexMapLayer.HIGHLIGHT_LAYER, SELECTION_HIGHLIGHT_SPRITE);
+        }
+    }
+
+    public bool HexIsInHighlightHexes(CubicHex hex) {
+        if (HighlightList != null) {
+            foreach(GameObject go in HighlightList) {
+                if (go != null && go.GetComponent<CubicHexComponent>() != null) {
+                    if (go.GetComponent<CubicHexComponent>().Hex.GetCoords() == hex.GetCoords()) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public void ClearHighlightHexes() {
+        if (HighlightList != null) {
+            for (int i = 0; i < HighlightList.Count; ++i) {
+                GameObject.Destroy(HighlightList[i]);
+            }
+            HighlightList = null;
+        }
+    }
 }

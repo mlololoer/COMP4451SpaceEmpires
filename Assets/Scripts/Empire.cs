@@ -5,10 +5,11 @@ using UnityEngine;
 public class Empire
 {
 	public string empireName;
-	public List<GameObject> empireShips;
-	public List<GameObject> empirePlanets;
+	public List<GameObject> empireShips = new List<GameObject>();
+	public List<GameObject> empirePlanets = new List<GameObject>();
 	public ResearchProgress researchProgress;
 	public int ownedResources;
+	public int shipTier = 1;
 	public GameObject[,] FOWArray;
 
 	public Empire(string empireName) {
@@ -19,4 +20,13 @@ public class Empire
 		ownedResources = 0;
 	}
 
+	public void SpawnShip(GameObject planet) {
+		ShipInfo info = new ShipInfo(empireName + " Ship", this, shipTier);
+		GameObject newShip = GameManager.GM.hexMap.PlaceShipAtPlanet(planet, info);
+		if (newShip != null) {
+			empireShips.Add(newShip);
+		} else {
+			Debug.Log("Ship cannot be spawned!");
+		}
+	}
 }

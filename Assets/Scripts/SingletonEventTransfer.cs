@@ -12,6 +12,10 @@ public class SingletonEventTransfer : MonoBehaviour
     	UIManager.UIM.CloseResearchModal();
     }
 
+    public void UIManager_BuildAction() {
+    	UIManager.UIM.BuildAction();
+    }
+
     public void GameManager_ProcessTurn() {
     	GameManager.GM.ProcessTurn();
     }

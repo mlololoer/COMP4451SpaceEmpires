@@ -726,6 +726,7 @@ GameObject:
   - component: {fileID: 519420031}
   - component: {fileID: 519420029}
   - component: {fileID: 519420030}
+  - component: {fileID: 519420033}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -753,8 +754,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d326c71152fcce147972035718492e4b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  panSpeed: 3
-  zoomSpeed: 0.03
+  zoomXMultiplier: 3.55
+  zoomYMultiplier: 2
 --- !u!20 &519420031
 Camera:
   m_ObjectHideFlags: 0
@@ -812,6 +813,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519420033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ca13fdfa4b5c9e0488863f3dc55b130a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  panSpeed: 3
+  zoomSpeed: 0.03
 --- !u!1 &541268049
 GameObject:
   m_ObjectHideFlags: 0
@@ -3968,7 +3983,8 @@ MonoBehaviour:
   SUN_SPRITE: {fileID: -5920736061661972224, guid: e920d00b2d4ca9443bc3529fabbe510e, type: 3}
   RESOURCE_SPRITE: {fileID: -3109900946470079800, guid: e920d00b2d4ca9443bc3529fabbe510e, type: 3}
   SHIP_SPRITE: {fileID: 5541035508590840154, guid: e920d00b2d4ca9443bc3529fabbe510e, type: 3}
-  OVERLAY_SPRITE: {fileID: -1383374779242704683, guid: e920d00b2d4ca9443bc3529fabbe510e, type: 3}
+  SELECTION_FOCUS_SPRITE: {fileID: -1383374779242704683, guid: e920d00b2d4ca9443bc3529fabbe510e, type: 3}
+  SELECTION_HIGHLIGHT_SPRITE: {fileID: -7616371711635432387, guid: e920d00b2d4ca9443bc3529fabbe510e, type: 3}
 --- !u!4 &2010034313
 Transform:
   m_ObjectHideFlags: 0

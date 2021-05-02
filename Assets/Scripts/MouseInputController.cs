@@ -34,6 +34,7 @@ public class MouseInputController : MonoBehaviour
         a. LMB down: 
             A: Handled by UI mouse controller
             B: Assign mouse movement to map movement? (start dragging map) if not on UI. 
+                If RMB is already down: ONLY allow map movement, NO selection.
         b. LMB up: 
             A->A: UI mouse handler should take care of it (still don't do anything)
             A->B: NOTHING happens on the map
@@ -96,7 +97,7 @@ public class MouseInputController : MonoBehaviour
         if (leftDown && Input.GetMouseButtonUp(0))
         {
             leftDown = false;
-            if (!leftDragging && !leftWasOnUI) {
+            if (!leftDragging && !leftWasOnUI && !rightDown) {
                 //LMB up (no drag)
                 SelectionManager.SM.Select(GetGameObjectsAtCursor(Input.mousePosition));
             }
@@ -109,13 +110,15 @@ public class MouseInputController : MonoBehaviour
         //RMB DOWN
         if (Input.GetMouseButtonDown(1))
         {
-            Debug.Log("RMB Down");
             rightDown = true;
             rightDragging = false;
             rightMouseDownPos = Input.mousePosition;
             //since the camera might move during movement selection, we can't set this, we need to rely on this.transform.position instead
             //lastCameraPosBeforeDrag = this.transform.position;
             rightWasOnUI = onUI;
+            if (!onUI) {
+                SelectionManager.SM.MoveOverlayOn();
+            }
         }
         else if (rightDragging || (rightDown && Input.GetMouseButton(1) && Vector3.Distance(Input.mousePosition, rightMouseDownPos) > dragEpsilon))
         {
@@ -130,11 +133,10 @@ public class MouseInputController : MonoBehaviour
         }
         if (rightDown && Input.GetMouseButtonUp(1))
         {
-            Debug.Log("RMB Up");
             rightDown = false;
-            if (!rightDragging && !rightWasOnUI) {
-                //LMB up (no drag)
-                SelectionManager.SM.CreateMoveOverlay();
+            if (!rightWasOnUI) {
+                //RMB up (no drag)
+                SelectionManager.SM.MoveOverlayOff(GetGameObjectsAtCursor(Input.mousePosition));
             }
             rightDragging = false;
         }

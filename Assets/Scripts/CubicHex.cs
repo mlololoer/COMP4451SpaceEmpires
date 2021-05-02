@@ -59,4 +59,8 @@ public class CubicHex
     	return new Vector3(x * 0.75f * Width(), (y + (x / 2f)) * Height(), 0);
     }
     
+    public override string ToString()
+    {
+        return "CubicHex(" + x + ", "+y+","+z+")";
+    }
 }
