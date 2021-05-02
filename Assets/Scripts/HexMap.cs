@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using System;
 using System.Linq;
-public enum HexMapLayer {BACKGROUND_LAYER,PLANET_LAYER,ASTEROID_LAYER,RESOURCE_LAYER,SHIP_LAYER,HIGHLIGHT_LAYER,OVERLAY_LAYER};
+public enum HexMapLayer {BACKGROUND_LAYER,PLANET_LAYER,ASTEROID_LAYER,RESOURCE_LAYER,DYSON_LAYER,SHIP_LAYER,HIGHLIGHT_LAYER,OVERLAY_LAYER};
 
 //Manages the map where all hexes are contained in.
 public class HexMap : MonoBehaviour
@@ -28,6 +28,7 @@ public class HexMap : MonoBehaviour
     public Sprite ASTEROID_SPRITE;
     public Sprite SUN_SPRITE;
     public Sprite RESOURCE_SPRITE;
+    public Sprite DYSON_SPRITE;
 
     public Sprite SHIP_SPRITE;
 
@@ -37,10 +38,13 @@ public class HexMap : MonoBehaviour
     //Stores all background hexes generated, by coordinates
     GameObject[,] HexArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
     //Stores all asteroids by coordinates
+    HashSet<GameObject> AsteroidSet = new HashSet<GameObject>();
     GameObject[,] AsteroidArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
     //Stores all resources by coordinates
     //Keeps track of all ships
     HashSet<GameObject> ShipSet = new HashSet<GameObject>();
+    //Keeps track of all dyson tiles
+    GameObject[,] DysonArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
     GameObject[,] ResourceArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
     //Stores all planets by coordinates
     GameObject[,] PlanetArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
@@ -173,14 +177,60 @@ public class HexMap : MonoBehaviour
                 return true;
             }
         }
-        if (AsteroidArray[MAP_X_OFFSET + hex.x, MAP_Y_OFFSET + hex.y] != null) {
-            Debug.Log("ASTEROID COLLISION");
+        foreach (GameObject asteroid in AsteroidSet) {
+            if (asteroid.GetComponent<CubicHexComponent>().Hex.GetCoords() == hex.GetCoords()) {
+                Debug.Log("ASTEROID COLLISION");
+                return true;
+            }
+        }
+        if (DysonArray[MAP_X_OFFSET + hex.x, MAP_Y_OFFSET + hex.y] != null) {
+            Debug.Log("DYSON COLLISION");
             return true;
         }
         return false;
     }
+    public bool CanPlaceDyson(CubicHex hex) {
+        CubicHex center = new CubicHex(0,0);
+        foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
+            if (hex.GetCoords() == center.Adjacent(dir).GetCoords()) {
+                if (GetHex(hex, HexMapLayer.DYSON_LAYER) != null) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public GameObject PlaceDyson(CubicHex hex) {
+        if (CanPlaceDyson(hex)) {
+            return InitializeDyson(hex);
+        } else {
+            Debug.Log("Can't place dyson here");
+            return null;
+        }
+    }
 
-    
+    GameObject InitializeDyson(CubicHex pos) {
+        GameObject newHexTile = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
+        newHexTile.name = ("Dyson Sphere Component");
+        newHexTile.GetComponent<CubicHexComponent>().Hex = new CubicHex(pos);
+        newHexTile.GetComponent<CubicHexComponent>().ParentHexMap = this;
+        newHexTile.GetComponentInChildren<SortingGroup>().sortingOrder = (int)HexMapLayer.DYSON_LAYER;
+        newHexTile.GetComponentInChildren<SpriteRenderer>().sprite = DYSON_SPRITE;
+        newHexTile.GetComponent<CubicHexComponent>().Info = null;
+        
+        SetHex(pos,HexMapLayer.DYSON_LAYER,newHexTile);
+        return newHexTile;
+    }
+
+    public bool DysonComplete() {
+        CubicHex center = new CubicHex(0,0);
+        foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
+            if (GetHex(center.Adjacent(dir), HexMapLayer.DYSON_LAYER) == null) {
+                return false;
+            }
+        }
+        return false;
+    }
 
     public GameObject InitializeHex(CubicHex pos, HexMapLayer layer, Sprite sprite) {
 		GameObject newHexTile = Instantiate(HexTilePrefab, pos.WorldPosition(), Quaternion.identity, this.transform);
@@ -231,6 +281,7 @@ public class HexMap : MonoBehaviour
         newHexTile.GetComponentInChildren<SpriteRenderer>().sprite = ASTEROID_SPRITE;
 
         SetHex(pos, HexMapLayer.ASTEROID_LAYER, newHexTile);
+        AsteroidSet.Add(newHexTile);
         
         return newHexTile;
     }
@@ -322,7 +373,7 @@ public class HexMap : MonoBehaviour
             case HexMapLayer.PLANET_LAYER:  {return PlanetArray;}
             case HexMapLayer.ASTEROID_LAYER:{return AsteroidArray;}
             case HexMapLayer.RESOURCE_LAYER:{return ResourceArray;}
-//            case HexMapLayer.SHIP_LAYER:{return ShipArray;}
+            case HexMapLayer.DYSON_LAYER:{return DysonArray;}
             case HexMapLayer.HIGHLIGHT_LAYER:{return HighlightArray;}
             default: {Debug.Log("Invalid layer!"); return null;}
         }
@@ -408,9 +459,7 @@ public class HexMap : MonoBehaviour
             foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection)))
             {
                 CubicHex adj = hex.Adjacent(dir);
-                //TODO: Add collision for enemy ships
-                //Possibly an array that is recomputed each time a ship moves?
-                if (GetHex(adj, HexMapLayer.ASTEROID_LAYER) != null) {
+                if (Collides(adj)) {
                     continue;
                 }
                 int adjDist = highlightDistances[MAP_X_OFFSET + adj.x, MAP_Y_OFFSET + adj.y];

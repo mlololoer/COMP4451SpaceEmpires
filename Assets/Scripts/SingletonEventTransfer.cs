@@ -20,6 +20,18 @@ public class SingletonEventTransfer : MonoBehaviour
         UIManager.UIM.AttackAction();
     }
 
+    public void UIManager_FrigateAction() {
+        UIManager.UIM.FrigateAction();
+    }
+    
+    public void UIManager_DestroyerAction() {
+        UIManager.UIM.DestroyerAction();
+    }
+
+    public void UIManager_CruiserAction() {
+        UIManager.UIM.CruiserAction();
+    }
+
     public void UIManager_Test() {
         UIManager.UIM.Test();
     }

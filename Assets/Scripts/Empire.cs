@@ -8,47 +8,56 @@ public class Empire
 	public List<GameObject> empireShips = new List<GameObject>();
 	public List<GameObject> empirePlanets = new List<GameObject>();
 	public List<GameObject> empireResources = new List<GameObject>();
-	public ResearchProgress researchProgress;
-	public int ownedResources = 0;
-	public int shipTier = 0;
+	public List<GameObject> empireDysons = new List<GameObject>();
+	public ResearchProgress researchProgress {get;}
+	public int ownedResources {get; private set;} = 0;
 	public GameObject[,] FOWArray;
 
+
 	public Empire(string empireName) {
+		ownedResources = 0;
 		this.empireName = empireName;
 		this.empireShips = new List<GameObject>();
 		this.empirePlanets = new List<GameObject>();
 		this.empireResources = new List<GameObject>();
-		this.researchProgress = new ResearchProgress();
-		ownedResources = 0;
+		this.empireDysons = new List<GameObject>();
+		this.researchProgress = new ResearchProgress(this);
+
 	}
 
-	/*public void SpawnShip(GameObject planet) {
-		ShipInfo info = new ShipInfo(empireName + " Ship", this, null, shipTier);
-		GameObject newShip = GameManager.GM.hexMap.PlaceShipAtPlanet(planet, info);
-		if (newShip != null) {
-			empireShips.Add(newShip);
-		} else {
-			Debug.Log("Ship cannot be spawned!");
-		}
-	}*/
-
-
 	public void NewTurn() {
+
+		researchProgress.ProcessTurn();
 		foreach(GameObject resource in empireResources) {
-			ownedResources += 10;
+			ownedResources += Constants.RESOURCES_PER_RESOURCETILE;
 		}
 		for (int i = 0; i < empireShips.Count; ++i) {
+			//restore health
     		ShipInfo info = (ShipInfo)empireShips[i].GetComponent<CubicHexComponent>().Info;
     		info.resetBeforeTurn();
     	}
     	for (int i = 0; i < empirePlanets.Count; ++i) {
+    		//restore health
+    		ownedResources += Constants.RESOURCES_PER_PLANET;
     		PlanetInfo info = (PlanetInfo)empirePlanets[i].GetComponent<CubicHexComponent>().Info;
-    		Debug.Log("Resetting planet...");
     		info.resetBeforeTurn();
     	}
 	}
+	public bool CanSpendResources(int amount) {
+		return ((ownedResources - amount) >= 0);
+	}
+	public bool SpendResources(int amount) {
+		if (CanSpendResources(amount)) {
+			ownedResources -= amount;
+			return true;
+			
+		} else {
+			Debug.Log("NEGATIVE BALANCE");
+			return false;
+		}
+	}
 
-	public void AddShip(GameObject ship) {Debug.Log("SHIP ADDDE: "+ship);this.empireShips.Add(ship);}
+	public void AddShip(GameObject ship) {this.empireShips.Add(ship);}
 	public void RemoveShip(GameObject ship) {this.empireShips.Remove(ship);}
 	public void AddResource(GameObject resource) {this.empireResources.Add(resource);}
 	public void RemoveResource(GameObject resource) {this.empireResources.Remove(resource);}

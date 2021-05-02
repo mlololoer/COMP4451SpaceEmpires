@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
 	int empireIndex;
 	//Hexmap with all units, planets, tiles, etc
 	public HexMap hexMap;
+	int turn = 0;
 
 	void Start() {
 		Empires.Add(new Empire("John"));
@@ -36,8 +37,13 @@ public class GameManager : MonoBehaviour
 	*/
     public void ProcessTurn() {
     	//BEFORE a player starts their turn, process all research/building stuff.
+    	++turn;
     	empireIndex = (empireIndex+1)%Empires.Count;
-    	GetActiveEmpire().NewTurn();
+    	//do not process turns if it is the very first turn for each player
+    	if (turn >= Empires.Count) {
+    		GetActiveEmpire().NewTurn();
+    	}
+    	
     	//process spaceship actions in all spaceships
     	//calculate research researchProgress
     	//foreach(Empire empire in Empires) {
