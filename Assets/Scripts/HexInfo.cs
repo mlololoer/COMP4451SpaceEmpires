@@ -98,6 +98,7 @@ public class ShipInfo : HexInfo {
 			Debug.Log("Can place a dyson tile");
 			return HexMapLayer.DYSON_LAYER;
 		}
+		Debug.Log("Nothing buildable found");
 		return HexMapLayer.BACKGROUND_LAYER;
 	}
 	public void attackTile() {

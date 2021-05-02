@@ -65,8 +65,8 @@ public class HexMap : MonoBehaviour
     public void GenerateMap(float resourceDensity, float asteroidDensity, List<Empire> empires) {
     	
     	//the very CENTER hex is always the SUN (an asteroid, since ships cannot collide with it)
-    	InitializeHex(new CubicHex(0,0), HexMapLayer.ASTEROID_LAYER, SUN_SPRITE);
-
+    	;
+        AsteroidSet.Add(InitializeHex(new CubicHex(0,0), HexMapLayer.ASTEROID_LAYER, SUN_SPRITE));
     	//hex ring with radius ringRadius
     	for (int ringRadius = 1; ringRadius <= MAP_RADIUS; ++ringRadius) {
 
@@ -173,27 +173,28 @@ public class HexMap : MonoBehaviour
     public bool Collides(CubicHex hex) {
         foreach (GameObject ship in ShipSet) {
             if (ship.GetComponent<CubicHexComponent>().Hex.GetCoords() == hex.GetCoords()) {
-                Debug.Log("SHIP COLLISION");
+                //Debug.Log("SHIP COLLISION");
                 return true;
             }
         }
         foreach (GameObject asteroid in AsteroidSet) {
             if (asteroid.GetComponent<CubicHexComponent>().Hex.GetCoords() == hex.GetCoords()) {
-                Debug.Log("ASTEROID COLLISION");
+                //Debug.Log("ASTEROID COLLISION");
                 return true;
             }
         }
         if (DysonArray[MAP_X_OFFSET + hex.x, MAP_Y_OFFSET + hex.y] != null) {
-            Debug.Log("DYSON COLLISION");
+            //Debug.Log("DYSON COLLISION");
             return true;
         }
         return false;
     }
     public bool CanPlaceDyson(CubicHex hex) {
+        Debug.Log("checkdyson");
         CubicHex center = new CubicHex(0,0);
         foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
             if (hex.GetCoords() == center.Adjacent(dir).GetCoords()) {
-                if (GetHex(hex, HexMapLayer.DYSON_LAYER) != null) {
+                if (GetHex(hex, HexMapLayer.DYSON_LAYER) == null) {
                     return true;
                 }
             }

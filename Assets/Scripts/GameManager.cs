@@ -37,6 +37,9 @@ public class GameManager : MonoBehaviour
 	*/
     public void ProcessTurn() {
     	//BEFORE a player starts their turn, process all research/building stuff.
+    	if (WinningCondition()) {
+    		return;
+    	}
     	++turn;
     	empireIndex = (empireIndex+1)%Empires.Count;
     	//do not process turns if it is the very first turn for each player
@@ -56,6 +59,26 @@ public class GameManager : MonoBehaviour
 
     public Empire GetActiveEmpire() {
 		return Empires[empireIndex];
+	}
+
+	bool WinningCondition() {
+		Empire remainingEmpire = null;
+		int empiresWithPlanets = 0;
+		foreach (Empire empire in Empires) {
+			if (empire.empirePlanets.Count != 0) {
+				++empiresWithPlanets;
+			} else {
+				remainingEmpire = empire;
+			}
+		}
+		if (empiresWithPlanets == 1) {
+			Debug.Log("Last standing winner: " + remainingEmpire.empireName);
+			return true;
+		} else if (hexMap.DysonComplete()) {
+			Debug.Log("Dyson sphere winner: " + GetActiveEmpire());
+			return true;
+		}
+		return false;
 	}
 
 
