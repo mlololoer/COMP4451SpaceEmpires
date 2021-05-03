@@ -7,6 +7,9 @@ using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
+    void Start() {
+        DontDestroyOnLoad(gameObject);
+    }
 	public static UIManager UIM;
 
 	public GameObject ResearchCanvas;
@@ -28,8 +31,12 @@ public class UIManager : MonoBehaviour
         ResourcesText.text = "Empire "+GameManager.GM.GetActiveEmpire().empireName + " has " + GameManager.GM.GetActiveEmpire().ownedResources + " resources.";
     }
     public void Test() {
-        CrossSceneManager.CrossText = "transfer";
-        SceneManager.LoadScene ("TestScene");
+        foreach (Transform child in GameManager.GM.hexMap.transform) {
+            child.gameObject.GetComponentInChildren< Renderer >().enabled = false;
+        }
+             //GetComponent< Renderer >().enabled = false;
+        //GameManager.GM.hexMap.gameObject.GetComponent<Renderer>().enabled = false;
+        SceneManager.LoadScene ("FightScene");
     /*
         List<CubicHex> a = GameManager.GM.hexMap.GetHexesFromDist(new CubicHex(0,-7),7, 0, 2, null);
         foreach (CubicHex b in a) {
@@ -91,7 +98,7 @@ public class UIManager : MonoBehaviour
                 }
             }
             //load text
-            switch (((ShipInfo)info).shipType) {
+            switch (((ShipInfo)info).shipUnit.unitClass) {
                 case (ShipType.FRIGATE): {
                     UnitDisplayTitle.text = "Frigate ship";
                     break;
@@ -111,6 +118,7 @@ public class UIManager : MonoBehaviour
             }
             UnitDisplayEmpire.text = "Empire: "+info.ParentEmpire.empireName;
             UnitDisplayDetails.text = "Remaining moves: "+((ShipInfo)info).remainingMoves;
+            //MUST use Unit health
         }
         //PLANET
         else if (info is PlanetInfo) {
@@ -173,7 +181,8 @@ public class UIManager : MonoBehaviour
     public void FrigateAction() {
         CubicHexComponent selectedCHC = SelectionManager.SM.SelectedGameObject.GetComponent<CubicHexComponent>();
         if (selectedCHC.Info is PlanetInfo) {
-            ((PlanetInfo)selectedCHC.Info).spawnShip(ShipType.FRIGATE);
+            PureUnit frigateUnit = new PureUnit("Frigate Ship", ShipType.FRIGATE, selectedCHC.Info.ParentEmpire.researchProgress.GetHealBonus(), selectedCHC.Info.ParentEmpire.researchProgress.GetAttackBonus(), 10, 40, 40);
+            ((PlanetInfo)selectedCHC.Info).spawnShip(frigateUnit);
         } else {
             Debug.Log("Frigate not spawned");
         }
@@ -183,7 +192,8 @@ public class UIManager : MonoBehaviour
     public void DestroyerAction() {
         CubicHexComponent selectedCHC = SelectionManager.SM.SelectedGameObject.GetComponent<CubicHexComponent>();
         if (selectedCHC.Info is PlanetInfo) {
-            ((PlanetInfo)selectedCHC.Info).spawnShip(ShipType.DESTROYER);
+            PureUnit destroyerUnit = new PureUnit("Destroyer Ship", ShipType.DESTROYER, selectedCHC.Info.ParentEmpire.researchProgress.GetHealBonus(), selectedCHC.Info.ParentEmpire.researchProgress.GetAttackBonus(), 30, 80, 80);
+            ((PlanetInfo)selectedCHC.Info).spawnShip(destroyerUnit);
         } else {
             Debug.Log("Destroyer not spawned");
         }
@@ -193,7 +203,8 @@ public class UIManager : MonoBehaviour
     public void CruiserAction() {
         CubicHexComponent selectedCHC = SelectionManager.SM.SelectedGameObject.GetComponent<CubicHexComponent>();
         if (selectedCHC.Info is PlanetInfo) {
-            ((PlanetInfo)selectedCHC.Info).spawnShip(ShipType.CRUISER);
+            PureUnit cruiserUnit = new PureUnit("Cruiser Ship", ShipType.CRUISER, selectedCHC.Info.ParentEmpire.researchProgress.GetHealBonus(), selectedCHC.Info.ParentEmpire.researchProgress.GetAttackBonus(), 20, 120, 120);
+            ((PlanetInfo)selectedCHC.Info).spawnShip(cruiserUnit);
         } else {
             Debug.Log("Cruiser not spawned");
         }

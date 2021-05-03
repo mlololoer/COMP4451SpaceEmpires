@@ -28,6 +28,8 @@ public class Empire
 	public void NewTurn() {
 
 		researchProgress.ProcessTurn();
+		//check whether research on health/damage is done
+
 		foreach(GameObject resource in empireResources) {
 			ownedResources += Constants.RESOURCES_PER_RESOURCETILE;
 		}
@@ -35,6 +37,8 @@ public class Empire
 			//restore health
     		ShipInfo info = (ShipInfo)empireShips[i].GetComponent<CubicHexComponent>().Info;
     		info.resetBeforeTurn();
+    		info.shipUnit.hlth_upgrade = researchProgress.GetHealBonus();
+    		info.shipUnit.dmg_upgrade = researchProgress.GetAttackBonus();
     	}
     	for (int i = 0; i < empirePlanets.Count; ++i) {
     		//restore health

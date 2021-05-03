@@ -7,6 +7,9 @@ using System;
 
 public class SelectionManager : MonoBehaviour
 {
+	void Start() {
+	DontDestroyOnLoad(gameObject);
+	}
 	public static SelectionManager SM;
 
 	//to keep track of whether the same hex is clicked again (to loop through all the objects in the hex)

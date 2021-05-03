@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 //Handles turns for every player
@@ -18,12 +18,15 @@ public class GameManager : MonoBehaviour
 	int turn = 0;
 
 	void Start() {
+		DontDestroyOnLoad(gameObject);
+	}
+
+	void TestStart() {
+		Debug.Log("TESTSTART - RUN ONLY ONCE");
 		Empires.Add(new Empire("John"));
 		Empires.Add(new Empire("AIPlayer"));
 		hexMap = GameObject.Find("HexMap").GetComponent<HexMap>();
 		hexMap.GenerateMap(0.05f, 0.2f, Empires);
-		//FOWManager.FM.hexMap = hexMap;
-		//FOWManager.FM.initializeFOW(new CubicHex(0,0));
 	}
 
 	
@@ -62,7 +65,6 @@ public class GameManager : MonoBehaviour
 	}
 
 	bool WinningCondition() {
-		Debug.Log(hexMap.DysonComplete());
 		Empire remainingEmpire = null;
 		int empiresWithPlanets = 0;
 		foreach (Empire empire in Empires) {
@@ -83,11 +85,34 @@ public class GameManager : MonoBehaviour
 	}
 
 
+	void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
+		Debug.Log("Main scene loaded back");
+		Debug.Log("Battle finished: " + CrossSceneManager.battleFinished);
+		Debug.Log("Battle outcome: " + CrossSceneManager.battleOutcome);
+		if (CrossSceneManager.battleFinished) {
+			foreach (Transform child in GameManager.GM.hexMap.transform) {
+	            child.gameObject.GetComponentInChildren< Renderer >().enabled = true;
+	        }
+		}
+	}
+
+	public void LoadFightScene(PureUnit player, PureUnit ai) {
+		foreach (Transform child in GameManager.GM.hexMap.transform) {
+            child.gameObject.GetComponentInChildren< Renderer >().enabled = false;
+        }
+        CrossSceneManager.playerUnit = player;
+        CrossSceneManager.aiUnit = ai;
+        SceneManager.LoadScene ("FightScene");
+
+	}
+
     //Singleton function
     void Awake() {
+    	SceneManager.sceneLoaded += OnSceneLoaded;
 		if(GM != null) {GameObject.Destroy(GM);}
 		else {GM = this;}
 		DontDestroyOnLoad(this);
+		TestStart();
 	}
 }
 

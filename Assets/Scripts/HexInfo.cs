@@ -39,7 +39,7 @@ public class HexInfo
     	this.ParentGameObject = parentGO;
     }
 }
-public enum ShipType {FRIGATE, DESTROYER, CRUISER};
+
 /*public class ShipDetails {
 	string unitName;
 	ShipType unitClass;
@@ -52,18 +52,18 @@ public enum ShipType {FRIGATE, DESTROYER, CRUISER};
 }*/
 
 public class ShipInfo : HexInfo {
-	Queue<CubicHex> queuedPath;
-	public ShipType shipType {get;}
-	int attackPower = 10;
+	public PureUnit shipUnit;
+	public int attackPower {get;} = 10;
 	public int remainingMoves {get; set;}
-	public ShipInfo(string name, Empire parentEmpire, GameObject parentGO, ShipType shipType) : base(name, parentEmpire, parentGO){
-		this.health = 100;
-		this.shipType = shipType;
+	public ShipInfo(string name, Empire parentEmpire, GameObject parentGO, PureUnit unit) : base(name, parentEmpire, parentGO){
+		//Must use UNIT class variables instead, this one is unused
+		this.health = 9999;
+		this.shipUnit = unit;
 		resetBeforeTurn();
 	}
 
 	public void resetBeforeTurn() {
-		remainingMoves = 3-((int)shipType);
+		remainingMoves = 3-((int)(shipUnit.unitClass));
 	}
 	public HexMapLayer attackable() {
 		Debug.Log("start attackable");
@@ -196,13 +196,13 @@ public class PlanetInfo : HexInfo {
 		}
 		return (!hasSpawnedShip) && (!(GameManager.GM.hexMap.Collides(this.ParentGameObject.GetComponent<CubicHexComponent>().Hex)));
 	}
-	public void spawnShip(ShipType shipType) {
-		ShipInfo info = new ShipInfo(ParentEmpire.empireName + " Ship", ParentEmpire, null, shipType);
+	public void spawnShip(PureUnit unit) {
+		ShipInfo info = new ShipInfo(ParentEmpire.empireName + " Ship", ParentEmpire, null, unit);
 		GameObject newShip = GameManager.GM.hexMap.PlaceShipAtPlanet(this.ParentGameObject, info);
 		if (newShip != null) {
 			hasSpawnedShip = true;
 			ParentEmpire.AddShip(newShip);
-			switch(shipType) {
+			switch(unit.unitClass) {
 				case (ShipType.FRIGATE): {ParentEmpire.SpendResources(Constants.FRIGATE_COST);break;}
 				case (ShipType.DESTROYER): {ParentEmpire.SpendResources(Constants.DESTROYER_COST);break;}
 				case (ShipType.CRUISER): {ParentEmpire.SpendResources(Constants.CRUISER_COST);break;}
