@@ -17,14 +17,10 @@ public class GameManager : MonoBehaviour
 	public HexMap hexMap;
 	int turn = 0;
 
-	void Start() {
-		DontDestroyOnLoad(gameObject);
-	}
-
-	void TestStart() {
-		Debug.Log("TESTSTART - RUN ONLY ONCE");
-		Empires.Add(new Empire("John"));
-		Empires.Add(new Empire("AIPlayer"));
+	void SetupEverything() {
+		Debug.Log("RUN ONLY ONCE");
+		Empires.Add(new Empire(CrossSceneManager.EmpireName));
+		Empires.Add(new Empire("AI Player"));
 		hexMap = GameObject.Find("HexMap").GetComponent<HexMap>();
 		hexMap.GenerateMap(0.05f, 0.2f, Empires);
 	}
@@ -76,43 +72,84 @@ public class GameManager : MonoBehaviour
 		}
 		if (empiresWithPlanets == 1) {
 			Debug.Log("Last standing winner: " + remainingEmpire.empireName);
+			CrossSceneManager.humanWon = remainingEmpire == Empires[0];
+			SceneManager.LoadScene ("Gameover");
 			return true;
 		} else if (hexMap.DysonComplete()) {
 			Debug.Log("Dyson sphere winner: " + GetActiveEmpire());
+			CrossSceneManager.humanWon = GetActiveEmpire() == Empires[0];
+			SceneManager.LoadScene ("Gameover");
 			return true;
 		}
+		
 		return false;
 	}
-
-
+	
 	void OnSceneLoaded(Scene scene, LoadSceneMode mode) {
 		Debug.Log("Main scene loaded back");
 		Debug.Log("Battle finished: " + CrossSceneManager.battleFinished);
 		Debug.Log("Battle outcome: " + CrossSceneManager.battleOutcome);
 		if (CrossSceneManager.battleFinished) {
-			foreach (Transform child in GameManager.GM.hexMap.transform) {
-	            child.gameObject.GetComponentInChildren< Renderer >().enabled = true;
+	        CrossSceneManager.battleFinished = false;
+			ShowAll();
+			if (playerTemp == null || aiTemp == null) {
+				Debug.Log("Two ships are null");
+			}
+	        if (CrossSceneManager.battleOutcome) {
+	        	//Human wins
+	        	((ShipInfo)playerTemp.GetComponent<CubicHexComponent>().Info).shipUnit = CrossSceneManager.playerUnit;
+	        	((ShipInfo)aiTemp.GetComponent<CubicHexComponent>().Info).destroy();
+	        } else {
+	        	((ShipInfo)aiTemp.GetComponent<CubicHexComponent>().Info).shipUnit = CrossSceneManager.aiUnit;
+	        	((ShipInfo)playerTemp.GetComponent<CubicHexComponent>().Info).destroy();
 	        }
+	        Debug.Log("AFTER FIGHT HEALTH:" + ((ShipInfo)playerTemp.GetComponent<CubicHexComponent>().Info).shipUnit.currentHP);
+	        playerTemp = null;
+	        	aiTemp = null;
 		}
 	}
+	GameObject playerTemp = null;
+	GameObject aiTemp = null;
+	public void LoadFightScene(GameObject player, GameObject ai) {
+		HideAll();
+		Debug.Log("BEFORE FIGHT HEALTH:" + ((ShipInfo)player.GetComponent<CubicHexComponent>().Info).shipUnit.currentHP);
+        CrossSceneManager.playerUnit = ((ShipInfo)player.GetComponent<CubicHexComponent>().Info).shipUnit;
+        CrossSceneManager.aiUnit = ((ShipInfo)ai.GetComponent<CubicHexComponent>().Info).shipUnit;
+        playerTemp = player;
+        aiTemp = ai;
 
-	public void LoadFightScene(PureUnit player, PureUnit ai) {
+        SceneManager.LoadScene ("FightScene");
+	}
+
+	public void HideAll() {
 		foreach (Transform child in GameManager.GM.hexMap.transform) {
             child.gameObject.GetComponentInChildren< Renderer >().enabled = false;
         }
-        CrossSceneManager.playerUnit = player;
-        CrossSceneManager.aiUnit = ai;
-        SceneManager.LoadScene ("FightScene");
-
+        GameManager.GM.GetComponentInChildren<Canvas>().enabled = false;
 	}
+	void ShowAll() {
+		foreach (Transform child in GameManager.GM.hexMap.transform) {
+            child.gameObject.GetComponentInChildren< Renderer >().enabled = true;
+        }
+        GameManager.GM.GetComponentInChildren<Canvas>().enabled = true;
+	}
+
 
     //Singleton function
+	static bool alrun = false;
     void Awake() {
-    	SceneManager.sceneLoaded += OnSceneLoaded;
+    	if (alrun) {
+    		if (this == GM) {return;}
+    		else {GameObject.Destroy(this.gameObject); return;}
+    	}
 		if(GM != null) {GameObject.Destroy(GM);}
 		else {GM = this;}
-		DontDestroyOnLoad(this);
-		TestStart();
+		DontDestroyOnLoad(this.gameObject);
+		alrun = true;
+
+		SceneManager.sceneLoaded += OnSceneLoaded;
+		SetupEverything();
 	}
+
 }
 

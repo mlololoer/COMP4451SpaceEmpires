@@ -65,6 +65,6 @@ public class Empire
 	public void RemoveShip(GameObject ship) {this.empireShips.Remove(ship);}
 	public void AddResource(GameObject resource) {this.empireResources.Add(resource);}
 	public void RemoveResource(GameObject resource) {this.empireResources.Remove(resource);}
-	public void AddPlanet(GameObject planet) {this.empirePlanets.Add(planet);}
+	public void AddPlanet(GameObject planet) {Debug.Log("Adding planet");this.empirePlanets.Add(planet);}
 	public void RemovePlanet(GameObject planet) {this.empirePlanets.Remove(planet);}
 }

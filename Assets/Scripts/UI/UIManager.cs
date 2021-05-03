@@ -7,9 +7,9 @@ using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
-    void Start() {
-        DontDestroyOnLoad(gameObject);
-    }
+    // void Start() {
+    //     DontDestroyOnLoad(gameObject);
+    // }
 	public static UIManager UIM;
 
 	public GameObject ResearchCanvas;
@@ -31,12 +31,10 @@ public class UIManager : MonoBehaviour
         ResourcesText.text = "Empire "+GameManager.GM.GetActiveEmpire().empireName + " has " + GameManager.GM.GetActiveEmpire().ownedResources + " resources.";
     }
     public void Test() {
-        foreach (Transform child in GameManager.GM.hexMap.transform) {
-            child.gameObject.GetComponentInChildren< Renderer >().enabled = false;
-        }
+        GameManager.GM.HideAll();
              //GetComponent< Renderer >().enabled = false;
         //GameManager.GM.hexMap.gameObject.GetComponent<Renderer>().enabled = false;
-        SceneManager.LoadScene ("FightScene");
+        SceneManager.LoadScene ("TestScene");
     /*
         List<CubicHex> a = GameManager.GM.hexMap.GetHexesFromDist(new CubicHex(0,-7),7, 0, 2, null);
         foreach (CubicHex b in a) {
@@ -222,13 +220,19 @@ public class UIManager : MonoBehaviour
             
         }
     }*/
-
+/*
     void Awake() {
 		if(UIM != null) {
 			GameObject.Destroy(UIM);
 		} else {
 			UIM = this;
 		}
-		DontDestroyOnLoad(this);
-	}
+		//DontDestroyOnLoad(this);
+	}*/
+    //Singleton function
+    static bool alrun = false;
+    void Awake() {
+        if (!alrun){UIM = this;}
+        alrun = true;
+    }
 }

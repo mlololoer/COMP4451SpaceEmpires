@@ -561,10 +561,13 @@ public class BattleSystem : MonoBehaviour
 	void EndBattle()
 	{
 		CrossSceneManager.battleFinished = true;
+		CrossSceneManager.playerUnit = new PureUnit(playerUnit.unitName, playerUnit.unitClass, playerUnit.hlth_upgrade, playerUnit.dmg_upgrade, playerUnit.damage, playerUnit.maxHP, playerUnit.currentHP);
+		CrossSceneManager.aiUnit = new PureUnit(enemyUnit.unitName, enemyUnit.unitClass, enemyUnit.hlth_upgrade, enemyUnit.dmg_upgrade, enemyUnit.damage, enemyUnit.maxHP, enemyUnit.currentHP);
 		if(state == BattleState.WON)
 		{
 			dialogueText.text = "You won the battle!";
 			CrossSceneManager.battleOutcome = true;
+
 		} else if (state == BattleState.LOST)
 		{
 			dialogueText.text = "You were defeated.";

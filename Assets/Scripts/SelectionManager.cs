@@ -7,9 +7,9 @@ using System;
 
 public class SelectionManager : MonoBehaviour
 {
-	void Start() {
-	DontDestroyOnLoad(gameObject);
-	}
+	// void Start() {
+	// DontDestroyOnLoad(gameObject);
+	// }
 	public static SelectionManager SM;
 
 	//to keep track of whether the same hex is clicked again (to loop through all the objects in the hex)
@@ -211,13 +211,19 @@ public class SelectionManager : MonoBehaviour
 	// 	}
 	// }
 
-
+/*
     //Singleton implementation
 	void Awake() {
 		if(SM != null)
 			GameObject.Destroy(SM);
 		else
 			SM = this;
-		DontDestroyOnLoad(this);
-	}
+		// DontDestroyOnLoad(this);
+	}*/
+	//Singleton function
+    static bool alrun = false;
+    void Awake() {
+        if (!alrun){SM = this;}
+        alrun = true;
+    }
 }

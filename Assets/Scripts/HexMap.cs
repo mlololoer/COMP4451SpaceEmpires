@@ -9,9 +9,9 @@ public enum HexMapLayer {BACKGROUND_LAYER,PLANET_LAYER,ASTEROID_LAYER,RESOURCE_L
 //Manages the map where all hexes are contained in.
 public class HexMap : MonoBehaviour
 {
-    void Start() {
-        DontDestroyOnLoad(gameObject);
-    }
+    // void Start() {
+    //     DontDestroyOnLoad(gameObject);
+    // }
 	const int MAX_MAP_WIDTH = 30;
 	const int MAX_MAP_HEIGHT = 30;
 
@@ -407,7 +407,7 @@ public class HexMap : MonoBehaviour
                             //found ship with different empire
                             //call scene change
                             Debug.Log("Ship collision detected, moving to fight scene");
-                            GameManager.GM.LoadFightScene(((ShipInfo)collidingship.GetComponent<CubicHexComponent>().Info).shipUnit, ((ShipInfo)ship.GetComponent<CubicHexComponent>().Info).shipUnit);
+                            GameManager.GM.LoadFightScene(ship, collidingship);
                             Debug.Log("Returned, moving ship");
                             ship.GetComponent<CubicHexComponent>().Hex.SetCoords(hex.x, hex.y);
                             ship.transform.position = hex.WorldPosition();
@@ -639,7 +639,7 @@ public class HexMap : MonoBehaviour
     public int GetDistToHex(CubicHex dest) {
         return highlightDistances[MAP_X_OFFSET + dest.x, MAP_Y_OFFSET + dest.y];
     }
-    void Awake () {
-         DontDestroyOnLoad (this.gameObject);
-     }
+    // void Awake () {
+    //      DontDestroyOnLoad (this.gameObject);
+     // }
 }
