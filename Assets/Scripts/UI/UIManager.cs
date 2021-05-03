@@ -2,6 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.Tilemaps;
+using UnityEngine.SceneManagement;
+using System.Collections.Generic;
 
 public class UIManager : MonoBehaviour
 {
@@ -26,7 +28,14 @@ public class UIManager : MonoBehaviour
         ResourcesText.text = "Empire "+GameManager.GM.GetActiveEmpire().empireName + " has " + GameManager.GM.GetActiveEmpire().ownedResources + " resources.";
     }
     public void Test() {
-        Debug.Log(GameManager.GM.Empires[0].empireShips[0]);
+        CrossSceneManager.CrossText = "transfer";
+        SceneManager.LoadScene ("TestScene");
+    /*
+        List<CubicHex> a = GameManager.GM.hexMap.GetHexesFromDist(new CubicHex(0,-7),7, 0, 2, null);
+        foreach (CubicHex b in a) {
+            Debug.Log(b);
+            GameManager.GM.hexMap.InitializeHex(b, HexMapLayer.DYSON_LAYER, GameManager.GM.hexMap.SELECTION_FOCUS_SPRITE);
+        }*/
     }
     //Research button top left
     public void OpenResearchModal() {

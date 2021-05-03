@@ -9,7 +9,6 @@ public enum HexMapLayer {BACKGROUND_LAYER,PLANET_LAYER,ASTEROID_LAYER,RESOURCE_L
 //Manages the map where all hexes are contained in.
 public class HexMap : MonoBehaviour
 {
-
 	const int MAX_MAP_WIDTH = 30;
 	const int MAX_MAP_HEIGHT = 30;
 
@@ -56,19 +55,28 @@ public class HexMap : MonoBehaviour
     //INDEPENDENT OF EACH PLAYER!!!
     public GameObject[,] FOWArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
 
+    bool[,] HeatShield1Array = new bool[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
+    bool[,] HeatShield2Array = new bool[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
+
     //For UI
     GameObject[,] HighlightOverlayArray = new GameObject[MAX_MAP_WIDTH, MAX_MAP_HEIGHT];
 
     GameObject SelectionOverlayHex = null;
 
+    void Start() {
+        //List<CubicHex> a = FindPath(new CubicHex(-3,8), new CubicHex(3,-8), 5);
+        
+    }
+
     //default hex dimensions: 	radius of 0.5 Unity in-world units 
     public void GenerateMap(float resourceDensity, float asteroidDensity, List<Empire> empires) {
     	
     	//the very CENTER hex is always the SUN (an asteroid, since ships cannot collide with it)
-    	;
+    	
         AsteroidSet.Add(InitializeHex(new CubicHex(0,0), HexMapLayer.ASTEROID_LAYER, SUN_SPRITE));
+
     	//hex ring with radius ringRadius
-    	for (int ringRadius = 1; ringRadius <= MAP_RADIUS; ++ringRadius) {
+    	for (int ringRadius = 1; ringRadius <= MAP_RADIUS+1; ++ringRadius) {
 
     		//get each corner hex that is ringRadius hexes away from the center
     		foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
@@ -77,6 +85,12 @@ public class HexMap : MonoBehaviour
 
     			//iterate through the line from the corner hex to the next corner hex
     			for (int stepLen = 0; stepLen < ringRadius; ++stepLen) {
+                    //Only for generating borders
+                    if (ringRadius == 3) {
+                        HeatShield2Array[MAP_X_OFFSET + baseDir.x, MAP_Y_OFFSET + baseDir.y] = true;
+                    } else if (ringRadius == 5) {
+                        HeatShield1Array[MAP_X_OFFSET + baseDir.x, MAP_Y_OFFSET + baseDir.y] = true;
+                    }
 	    			//Decisions for what the hex's texture should be
 
 	    			//For the hexes immediately surrounding the SUN, they MUST be empty (for the dyson sphere).
@@ -112,8 +126,9 @@ public class HexMap : MonoBehaviour
     					} else {
     						InitializeHex(baseDir, HexMapLayer.BACKGROUND_LAYER, BACKGROUND_SPRITE);
     					}
-    				}
-
+    				} else if (ringRadius == 11) {
+                        AsteroidSet.Add(InitializeAsteroid(baseDir));
+                    }
     				//All other rings should be empty (to be filled with resources)
     				else {
     					if (UnityEngine.Random.Range(0.0f, 1.0f) < resourceDensity) {
@@ -168,6 +183,32 @@ public class HexMap : MonoBehaviour
                 baseDir = baseDir.Adjacent((CubicDirection)(((int)dir + 2) % 6));
 			}
 		}
+        //for ships
+        //we don't need to keep replacement hexes since they can just move around
+        foreach (GameObject ship in ShipSet) {
+            CubicHex top = new CubicHex(CubicHex.DirectionBases[(int)CubicDirection.NORTH]*ringNum);
+            CubicHex beforetop = top.Adjacent(CubicDirection.SOUTHWEST);
+            if (ship.GetComponent<CubicHexComponent>().Hex.GetCoords() == beforetop.GetCoords()) {
+                MoveShip(ship,top,0);
+                continue;
+            } 
+            bool moving = false;
+            bool moved = false;
+            foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
+                CubicHex baseDir = new CubicHex(CubicHex.DirectionBases[(int)dir]*ringNum);
+                for (int stepLen = 0; stepLen < ringNum; ++stepLen) {
+                    if (!moved && moving) {
+                        MoveShip(ship, baseDir,0);
+                        moved = true;
+                    }
+                    if (!moved && ship.GetComponent<CubicHexComponent>().Hex.GetCoords() == baseDir.GetCoords()) {
+                        moving = true;
+                    }
+                    //step towards next hex (wrap around NORTHWEST->NORTH)
+                    baseDir = baseDir.Adjacent((CubicDirection)(((int)dir + 2) % 6));
+                }
+            }
+        }
     }
 
     public bool Collides(CubicHex hex) {
@@ -230,7 +271,7 @@ public class HexMap : MonoBehaviour
                 return false;
             }
         }
-        return false;
+        return true;
     }
 
     public GameObject InitializeHex(CubicHex pos, HexMapLayer layer, Sprite sprite) {
@@ -356,15 +397,40 @@ public class HexMap : MonoBehaviour
         return replacedHex;
     }    
 
-    public void MoveShip(GameObject ship, CubicHex to) {
-
+    public void MoveShip(GameObject ship, CubicHex to, int minRadius) {
         Debug.Log("To "+to);
         if (ship != null) {
+            List<CubicHex> path = FindPath(ship.GetComponent<CubicHexComponent>().Hex,to,minRadius);
+            foreach(CubicHex hex in path) {
+                foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
+                    //TODO: Use dictionary
+                    foreach (GameObject collidingship in ShipSet) {
+                        if (collidingship.GetComponent<CubicHexComponent>().Hex.GetCoords() == hex.Adjacent(dir).GetCoords() && collidingship.GetComponent<CubicHexComponent>().Info.ParentEmpire != ship.GetComponent<CubicHexComponent>().Info.ParentEmpire) {
+                            //found ship with different empire
+                            //call scene change
+                            Debug.Log("Ship collision detected");
+
+                            ship.GetComponent<CubicHexComponent>().Hex.SetCoords(hex.x, hex.y);
+                            ship.transform.position = hex.WorldPosition();
+                            return;
+                        }
+                    }
+                }
+            }
             ship.GetComponent<CubicHexComponent>().Hex.SetCoords(to.x, to.y);
             ship.transform.position = to.WorldPosition();
 
         } else {
             Debug.Log("ship was null");
+        }
+    }
+    public void DestroyShip(GameObject ship) {
+        if (ship != null) {
+            ShipSet.Remove(ship);
+            GameObject.Destroy(ship);
+            Debug.Log("Ship destroyed");
+        } else {
+            Debug.Log("Ship to be destroyed is null");
         }
     }
 
@@ -430,10 +496,67 @@ public class HexMap : MonoBehaviour
         }
         return false;
     }
+    public class PathHex : CubicHex {
+        public PathHex(CubicHex copy, int cost, PathHex parent) : base(copy){
+            this.parent = parent;
+        }
+        public int cost;
+        public PathHex parent;
+    }
+    //Return path of cubichexes
+    public List<CubicHex> FindPath(CubicHex start, CubicHex dest, int minRadius) {
+        List<PathHex> workingHexes = new List<PathHex>();
+        workingHexes.Add(new PathHex(start, 0, null));
+        List<PathHex> visitedHexes = new List<PathHex>();
+        while (workingHexes.Count > 0) {
+            PathHex currentHex = workingHexes.OrderBy(hex => Vector3.Distance(hex.WorldPosition(),dest.WorldPosition())+hex.cost).First();
+            if (currentHex.GetCoords() == dest.GetCoords()) {
+                Debug.Log("Found path to " + currentHex);
+                List<CubicHex> path = new List<CubicHex>();
+                while (currentHex != null) {
+                    path.Add(currentHex);
+                    currentHex = currentHex.parent;
+                }
+                path.Reverse();
+                return path;
+            }
+            visitedHexes.Add(currentHex);
+            workingHexes.Remove(currentHex);
+            foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection))) {
+                PathHex newhex = new PathHex(currentHex.Adjacent(dir),currentHex.cost+1, currentHex);
+                bool collidesWithRing3 = false;
+                bool collidesWithRing5 = false;
+                if (minRadius == 3) {
+                    collidesWithRing3 = HeatShield2Array[MAP_X_OFFSET + newhex.x, MAP_Y_OFFSET + newhex.y];
+                } else if (minRadius == 5) {
+                    collidesWithRing5 = HeatShield1Array[MAP_X_OFFSET + newhex.x, MAP_Y_OFFSET + newhex.y];
+                }
+                if (collidesWithRing3 || collidesWithRing5 || Collides(newhex) || visitedHexes.Any(hex => hex.GetCoords() == newhex.GetCoords())) {
+                    continue;
+                }
 
+                if(workingHexes.Any(hex => hex.GetCoords() == newhex.GetCoords())) {
+                    var existingTile = workingHexes.First(hex => hex.GetCoords() == newhex.GetCoords());
+                    if(existingTile.cost + Vector3.Distance(existingTile.WorldPosition(),dest.WorldPosition()) > newhex.cost + Vector3.Distance(newhex.WorldPosition(),dest.WorldPosition())) {
+                        workingHexes.Remove(existingTile);
+                        workingHexes.Add(newhex);
+                    }
+                } else { 
+                    workingHexes.Add(newhex);
+                }
+            }
+        }
+        Debug.Log("Can't find path");
+        return null;
+    }
 
     //for finding moveable tiles from a ship. since ships will probably not move more than 4 tiles in a turn, we simple use BFS.
-    public List<CubicHex> GetHexesFromDist(CubicHex pos, int maxDist) {
+    //'target' is a simple way to overload GetHexesFromDist, if it is nonzero then GetHexesFromDist will return a path of CubicHexes from pos to whatever the closest target hex is.
+    //  1: Ship
+    //  2: Resource
+    //  3: Planet
+    //  4: Dyson sphere location
+    public List<CubicHex> GetHexesFromDist(CubicHex pos, int maxDist, int minRadius, int target = 0, Empire empire = null) {
         if (maxDist > MAX_MAP_WIDTH/2 || maxDist > MAX_MAP_HEIGHT/2) {
             Debug.Log("Reached a hex outside of the map!");
             return null;
@@ -460,9 +583,50 @@ public class HexMap : MonoBehaviour
             foreach (CubicDirection dir in Enum.GetValues(typeof(CubicDirection)))
             {
                 CubicHex adj = hex.Adjacent(dir);
-                if (Collides(adj)) {
+                bool collidesWithRing3 = false;
+                bool collidesWithRing5 = false;
+                if (minRadius == 3) {
+                    collidesWithRing3 = HeatShield2Array[MAP_X_OFFSET + adj.x, MAP_Y_OFFSET + adj.y];
+                } else if (minRadius == 5) {
+                    collidesWithRing5 = HeatShield1Array[MAP_X_OFFSET + adj.x, MAP_Y_OFFSET + adj.y];
+                }
+                if (collidesWithRing3 || collidesWithRing5 || Collides(adj)) {
                     continue;
                 }
+
+                if (target != 0) {
+                    switch(target) {
+                        case 1: {
+                            foreach (GameObject ship in ShipSet) {
+                                if (ship.GetComponent<CubicHexComponent>().Info.ParentEmpire == empire) {
+                                    return FindPath(pos, adj, minRadius);
+                                }
+                            }
+                            break;
+                        }
+                        case 2: {
+                            GameObject resource = GetHex(adj, HexMapLayer.RESOURCE_LAYER);
+                            if (resource != null && resource.GetComponent<CubicHexComponent>().Info.ParentEmpire == empire) {
+                                return FindPath(pos, adj, minRadius);
+                            }
+                            break;
+                        }
+                        case 3: {
+                            GameObject planet = GetHex(adj, HexMapLayer.PLANET_LAYER);
+                            if (planet != null && planet.GetComponent<CubicHexComponent>().Info.ParentEmpire == empire) {
+                                return FindPath(pos, adj, minRadius);
+                            }
+                            break;
+                        }
+                        case 4: {
+                            if (CanPlaceDyson(adj)) {
+                                return FindPath(pos, adj, minRadius);
+                            }
+                            break;
+                        }
+                    }
+                }
+
                 int adjDist = highlightDistances[MAP_X_OFFSET + adj.x, MAP_Y_OFFSET + adj.y];
                 if (hexDist + 1 < adjDist && hexDist + 1 <= maxDist) {
                     queue.Enqueue(adj);
@@ -476,4 +640,7 @@ public class HexMap : MonoBehaviour
     public int GetDistToHex(CubicHex dest) {
         return highlightDistances[MAP_X_OFFSET + dest.x, MAP_Y_OFFSET + dest.y];
     }
+    void Awake () {
+         DontDestroyOnLoad (this.gameObject);
+     }
 }

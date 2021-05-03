@@ -9,20 +9,22 @@ public class Constants {
 	public static int TURNS_FOR_RESEARCH2 = 5;
 	//Research resource costs
 	public static int RESOURCES_FOR_RESEARCH0 = 5;
-	public static int RESOURCES_FOR_RESEARCH1 = 10;
-	public static int RESOURCES_FOR_RESEARCH2 = 20;
+	public static int RESOURCES_FOR_RESEARCH1 = 50;
+	public static int RESOURCES_FOR_RESEARCH2 = 75;
 	//Resource outputs
 	public static int RESOURCES_PER_RESOURCETILE = 10;
-	public static int RESOURCES_PER_PLANET = 50;
+	public static int RESOURCES_PER_PLANET = 25;
 	//Resource costs
-	public static int FRIGATE_COST = 10;
-	public static int DESTROYER_COST = 30;
-	public static int CRUISER_COST = 50;
-	public static int DYSON_COST = 50;
+	public static int FRIGATE_COST = 50;
+	public static int DESTROYER_COST = 75;
+	public static int CRUISER_COST = 100;
+	public static int DYSON_COST = 150;
 	//Initial health
 	public static int PLANET_INITIAL_HEALTH = 250;
 	public static int RESOURCE_INITIAL_HEALTH = 100;
 	public static int DYSON_INITIAL_HEALTH = 100;
+	//Max initial ships
+	public static int INITIAL_SHIPS = 4;
 }
 public class HexInfo
 {
@@ -139,8 +141,12 @@ public class ShipInfo : HexInfo {
 			GameManager.GM.hexMap.PlaceDyson(thisCHC.Hex);
 		}
 	}
-
-
+	public void destroy() {
+		Debug.Log("Attempting to destroy ship");
+		ParentEmpire.empireShips.Remove(ParentGameObject);
+		GameManager.GM.hexMap.DestroyShip(ParentGameObject);
+		Debug.Log("Successfully deleted in shipinfo");
+	}
 }
 
 public class PlanetInfo : HexInfo {
@@ -168,6 +174,9 @@ public class PlanetInfo : HexInfo {
 		this.health = Constants.PLANET_INITIAL_HEALTH;
 	}
 	public bool canSpawnShip(ShipType shipType) {
+		if (ParentEmpire.empireShips.Count >= ParentEmpire.researchProgress.GetLimitsLevel()+Constants.INITIAL_SHIPS) {
+			return false;
+		}
 		switch(shipType) {
 			case (ShipType.FRIGATE): {
 				if (ParentEmpire.researchProgress.GetShipTypesLevel() < 0 || !ParentEmpire.CanSpendResources(Constants.FRIGATE_COST)) {

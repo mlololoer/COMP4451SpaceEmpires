@@ -62,6 +62,7 @@ public class GameManager : MonoBehaviour
 	}
 
 	bool WinningCondition() {
+		Debug.Log(hexMap.DysonComplete());
 		Empire remainingEmpire = null;
 		int empiresWithPlanets = 0;
 		foreach (Empire empire in Empires) {

@@ -122,8 +122,14 @@ public class SelectionManager : MonoBehaviour
 			CubicHexComponent shipCHC = SelectedGameObject.GetComponent<CubicHexComponent>();
 			if (((ShipInfo)shipCHC.Info).ParentEmpire == GameManager.GM.GetActiveEmpire()) {
 				Debug.Log("Ship at "+ shipCHC.Hex.x + ", " + shipCHC.Hex.y+" ready to move");
-			List<CubicHex> reachable = GameManager.GM.hexMap.GetHexesFromDist(shipCHC.Hex, ((ShipInfo)shipCHC.Info).remainingMoves);
-			GameManager.GM.hexMap.SetHighlightHexes(reachable);
+				int radius = 5;
+				if (GameManager.GM.GetActiveEmpire().researchProgress.GetHeatShieldsLevel() == 1) {
+					radius = 3;
+				} else if (GameManager.GM.GetActiveEmpire().researchProgress.GetHeatShieldsLevel() == 2) {
+					radius = 0;
+				}
+				List<CubicHex> reachable = GameManager.GM.hexMap.GetHexesFromDist(shipCHC.Hex, ((ShipInfo)shipCHC.Info).remainingMoves, radius);
+				GameManager.GM.hexMap.SetHighlightHexes(reachable);
 			} else {
 				Debug.Log("Ship was not owned by active empire");
 			}
@@ -152,7 +158,13 @@ public class SelectionManager : MonoBehaviour
 				if (GameManager.GM.hexMap.HexIsInHighlightHexes(clickedHexLocation)) {
 					Debug.Log("Move a " + SelectedGameObject);
 					Debug.Log("Move from "+shipCHC.Hex+" to "+clickedHexLocation);
-					GameManager.GM.hexMap.MoveShip(SelectedGameObject, clickedHexLocation);
+					int radius = 5;
+					if (GameManager.GM.GetActiveEmpire().researchProgress.GetHeatShieldsLevel() == 1) {
+						radius = 3;
+					} else if (GameManager.GM.GetActiveEmpire().researchProgress.GetHeatShieldsLevel() == 2) {
+						radius = 0;
+					}
+					GameManager.GM.hexMap.MoveShip(SelectedGameObject, clickedHexLocation, radius);
 					((ShipInfo)shipCHC.Info).remainingMoves -= GameManager.GM.hexMap.GetDistToHex(clickedHexLocation);
 
 				} else {
